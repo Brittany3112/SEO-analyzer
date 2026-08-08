@@ -2,8 +2,8 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>4G 吃到飽 SEO 數據分析儀表板</title>
-    <!-- 引入 Chart.js 畫圖工具 -->
+    <title>4G 吃到飽 SEO 數據儀表板</title>
+    <!-- 引入 Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- 引入 Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -22,28 +22,32 @@
         <h3>請先登入</h3>
         <input type="email" id="email" placeholder="輸入 Email"><br><br>
         <input type="password" id="password" placeholder="輸入密碼"><br><br>
-        <button onclick="login()">登入</button>
+        <button type="button" onclick="handleLogin()">登入</button>
         <p id="login-error" style="color: red;"></p>
     </div>
 
-    <!-- 圖表與內容區塊（登入後才顯示） -->
+    <!-- 圖表與內容區塊 -->
     <div id="dashboard-section" class="card hidden">
         <h3>主題分群統計圖表</h3>
         <canvas id="myChart" width="400" height="200"></canvas>
-        <button onclick="logout()" style="margin-top: 20px;">登出</button>
+        <button type="button" onclick="handleLogout()" style="margin-top: 20px;">登出</button>
     </div>
 
     <script>
-        // 填入妳的 Supabase 專案資訊
+        // 請確保這裡填入妳真正的 Supabase URL 與 Anon Key
         const SUPABASE_URL = 'https://kmtplcbcgtyjzupseclr.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImttdHBsY2JjZ3R5anp1cHNlY2xyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxNzkyNDAsImV4cCI6MjEwMTc1NTI0MH0.Qg3QajB281MDDqKhc8HymCYaIScDrc-eqv--xiYzwbQ';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        async function login() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
+        const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        async function handleLogin() {
+            const emailField = document.getElementById('email').value;
+            const passwordField = document.getElementById('password').value;
+
+            const { data, error } = await sbClient.auth.signInWithPassword({
+                email: emailField,
+                password: passwordField
+            });
 
             if (error) {
                 document.getElementById('login-error').innerText = '登入失敗：' + error.message;
@@ -55,14 +59,12 @@
         }
 
         async function loadChartData() {
-            // 從 Supabase 的 seo_data 表格抓取資料
-            const { data, error } = await supabase.from('seo_data').select('theme, count');
+            const { data, error } = await sbClient.from('seo_data').select('theme, count');
             if (error) {
                 console.error('抓取資料失敗', error);
                 return;
             }
 
-            // 簡單將資料依 theme 分群加總
             let themeCounts = {};
             data.forEach(row => {
                 let theme = row.theme || '未分類';
@@ -72,7 +74,6 @@
             const labels = Object.keys(themeCounts);
             const values = Object.values(themeCounts);
 
-            // 用 Chart.js 畫長條圖
             const ctx = document.getElementById('myChart').getContext('2d');
             new Chart(ctx, {
                 type: 'bar',
@@ -89,8 +90,8 @@
             });
         }
 
-        function logout() {
-            supabase.auth.signOut();
+        function handleLogout() {
+            sbClient.auth.signOut();
             location.reload();
         }
     </script>
