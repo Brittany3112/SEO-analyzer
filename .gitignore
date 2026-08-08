@@ -1,0 +1,4 @@
+.idea/
+results.json
+__pycache__/
+.env
