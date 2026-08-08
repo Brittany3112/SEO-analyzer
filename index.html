@@ -65,10 +65,12 @@
                 return;
             }
 
+            // 修改這裡：把 count 欄位的值進行數值加總
             let themeCounts = {};
             data.forEach(row => {
                 let theme = row.theme || '未分類';
-                themeCounts[theme] = (themeCounts[theme] || 0) + (row.count || 1);
+                let c = Number(row.count) || 0; // 確保是數字
+                themeCounts[theme] = (themeCounts[theme] || 0) + c;
             });
 
             const labels = Object.keys(themeCounts);
@@ -80,7 +82,7 @@
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Entity 主題分群數量',
+                        label: 'Entity 主題總次數',
                         data: values,
                         backgroundColor: 'rgba(54, 162, 235, 0.5)',
                         borderColor: 'rgba(54, 162, 235, 1)',
