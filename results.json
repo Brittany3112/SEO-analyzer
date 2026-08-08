@@ -1,0 +1,580 @@
+[
+    {
+        "title": "【新申辦/攜碼】超值4G吃到飽方案199起-遠傳電信網路門市",
+        "url": "https://www.fetnet.net/content/cbu/estore/exclusive/499.html",
+        "entities": [
+            {
+                "entity": "遠傳",
+                "count": 12,
+                "theme": "品牌"
+            },
+            {
+                "entity": "499元",
+                "count": 3,
+                "theme": "價格"
+            },
+            {
+                "entity": "199元",
+                "count": 4,
+                "theme": "價格"
+            },
+            {
+                "entity": "288元",
+                "count": 1,
+                "theme": "價格"
+            },
+            {
+                "entity": "129元",
+                "count": 1,
+                "theme": "價格"
+            },
+            {
+                "entity": "不限速",
+                "count": 2,
+                "theme": "技術"
+            },
+            {
+                "entity": "5G",
+                "count": 6,
+                "theme": "技術"
+            },
+            {
+                "entity": "4G",
+                "count": 3,
+                "theme": "技術"
+            },
+            {
+                "entity": "149元",
+                "count": 3,
+                "theme": "價格"
+            },
+            {
+                "entity": "99元",
+                "count": 1,
+                "theme": "價格"
+            },
+            {
+                "entity": "5000全聯禮券",
+                "count": 2,
+                "theme": "技術"
+            },
+            {
+                "entity": "0元",
+                "count": 2,
+                "theme": "價格"
+            },
+            {
+                "entity": "3C家電",
+                "count": 2,
+                "theme": "技術"
+            },
+            {
+                "entity": "eSIM服務",
+                "count": 1,
+                "theme": "技術"
+            },
+            {
+                "entity": "月月帳單折$150",
+                "count": 1,
+                "theme": "價格"
+            },
+            {
+                "entity": "專屬優惠",
+                "count": 3,
+                "theme": "技術"
+            }
+        ]
+    },
+    {
+        "title": "4G全資費| 中華電信網路門市CHT.com.tw",
+        "url": "https://www.cht.com.tw/home/campaign/4grate",
+        "entities": [
+            {
+                "entity": "中華電信",
+                "count": 6,
+                "theme": "品牌"
+            },
+            {
+                "entity": "299元",
+                "count": 3,
+                "theme": "價格"
+            },
+            {
+                "entity": "388元",
+                "count": 2,
+                "theme": "價格"
+            },
+            {
+                "entity": "399元",
+                "count": 3,
+                "theme": "價格"
+            },
+            {
+                "entity": "599元",
+                "count": 3,
+                "theme": "價格"
+            },
+            {
+                "entity": "4G",
+                "count": 5,
+                "theme": "技術"
+            },
+            {
+                "entity": "5 GB",
+                "count": 2,
+                "theme": "技術"
+            },
+            {
+                "entity": "6 GB",
+                "count": 4,
+                "theme": "技術"
+            },
+            {
+                "entity": "128 Kbps",
+                "count": 5,
+                "theme": "技術"
+            },
+            {
+                "entity": "無限瀏覽",
+                "count": 5,
+                "theme": "技術"
+            }
+        ]
+    },
+    {
+        "title": "[2026.08 最新] 最便宜4G 吃到飽不限速：三大電信資費精算 ...",
+        "url": "https://www.landtop.com.tw/reviews/137",
+        "entities": [
+            {
+                "entity": "中華電信",
+                "count": 5,
+                "theme": "品牌"
+            },
+            {
+                "entity": "遠傳",
+                "count": 3,
+                "theme": "品牌"
+            },
+            {
+                "entity": "台灣大哥大",
+                "count": 3,
+                "theme": "品牌"
+            },
+            {
+                "entity": "699元",
+                "count": 5,
+                "theme": "價格"
+            },
+            {
+                "entity": "588元",
+                "count": 1,
+                "theme": "價格"
+            },
+            {
+                "entity": "499元",
+                "count": 1,
+                "theme": "價格"
+            },
+            {
+                "entity": "299元",
+                "count": 1,
+                "theme": "價格"
+            },
+            {
+                "entity": "不限速",
+                "count": 6,
+                "theme": "技術"
+            },
+            {
+                "entity": "吃到飽",
+                "count": 6,
+                "theme": "技術"
+            },
+            {
+                "entity": "月租",
+                "count": 3,
+                "theme": "技術"
+            },
+            {
+                "entity": "折扣",
+                "count": 4,
+                "theme": "技術"
+            },
+            {
+                "entity": "攜碼",
+                "count": 3,
+                "theme": "技術"
+            },
+            {
+                "entity": "新申辦",
+                "count": 2,
+                "theme": "技術"
+            },
+            {
+                "entity": "續約",
+                "count": 4,
+                "theme": "技術"
+            },
+            {
+                "entity": "傳輸量",
+                "count": 3,
+                "theme": "技術"
+            }
+        ]
+    },
+    {
+        "title": "月租方案全系列",
+        "url": "https://www.taiwanmobile.com/mobile/postpaid/ratePlan/plan-4G-all.html",
+        "entities": [
+            {
+                "entity": "台灣大哥大",
+                "count": 6,
+                "theme": "品牌"
+            },
+            {
+                "entity": "399元",
+                "count": 2,
+                "theme": "價格"
+            },
+            {
+                "entity": "499元",
+                "count": 3,
+                "theme": "價格"
+            },
+            {
+                "entity": "599元",
+                "count": 2,
+                "theme": "價格"
+            },
+            {
+                "entity": "21GB",
+                "count": 2,
+                "theme": "技術"
+            },
+            {
+                "entity": "128Kbps",
+                "count": 1,
+                "theme": "技術"
+            },
+            {
+                "entity": "21Mbps",
+                "count": 1,
+                "theme": "技術"
+            },
+            {
+                "entity": "不降速",
+                "count": 2,
+                "theme": "技術"
+            },
+            {
+                "entity": "網內免費語音通話",
+                "count": 4,
+                "theme": "技術"
+            },
+            {
+                "entity": "60分鐘免費優惠",
+                "count": 1,
+                "theme": "技術"
+            },
+            {
+                "entity": "超過資費內含上網傳輸量",
+                "count": 2,
+                "theme": "技術"
+            }
+        ]
+    },
+    {
+        "title": "你是不是掉入高額吃到飽資費陷阱？來看這些話術你是否中招",
+        "url": "https://ty3c.com/%E4%BD%A0%E6%98%AF%E4%B8%8D%E6%98%AF%E6%8E%89%E5%85%A5%E9%AB%98%E9%A1%8D%E5%90%83%E5%88%B0%E9%A3%BD%E8%B3%87%E8%B2%BB%E9%99%B7%E9%98%B1%EF%BC%9F%E4%BE%86%E7%9C%8B%E9%80%99%E4%BA%9B%E8%A9%B1%E8%A1%93/?srsltid=AfmBOopGPCI3dchTI_hKmWeErot-jFpgWESxQfqQs9ggjnZtv1MOmVsb",
+        "entities": [
+            {
+                "entity": "中華電信",
+                "count": 5,
+                "theme": "品牌"
+            },
+            {
+                "entity": "499元",
+                "count": 2,
+                "theme": "價格"
+            },
+            {
+                "entity": "999元",
+                "count": 4,
+                "theme": "價格"
+            },
+            {
+                "entity": "1399元",
+                "count": 4,
+                "theme": "價格"
+            },
+            {
+                "entity": "399元",
+                "count": 1,
+                "theme": "價格"
+            },
+            {
+                "entity": "4G 吃到飽",
+                "count": 5,
+                "theme": "技術"
+            },
+            {
+                "entity": "5G 吃到飽",
+                "count": 3,
+                "theme": "技術"
+            },
+            {
+                "entity": "不限速",
+                "count": 3,
+                "theme": "技術"
+            },
+            {
+                "entity": "熱點分享",
+                "count": 4,
+                "theme": "技術"
+            },
+            {
+                "entity": "20GB",
+                "count": 1,
+                "theme": "技術"
+            },
+            {
+                "entity": "60GB",
+                "count": 2,
+                "theme": "技術"
+            },
+            {
+                "entity": "12GB",
+                "count": 1,
+                "theme": "技術"
+            }
+        ]
+    },
+    {
+        "title": "台灣大哥大網路門市限定｜4G精選新申請/攜碼專案",
+        "url": "https://www.myfone.com.tw/mfo/estore/closedsale/singlenumber/rateplanlist/PN?actCode=34599_2412",
+        "entities": [
+            {
+                "entity": "台灣大哥大",
+                "count": 5,
+                "theme": "品牌"
+            },
+            {
+                "entity": "499元",
+                "count": 1,
+                "theme": "價格"
+            },
+            {
+                "entity": "199元",
+                "count": 1,
+                "theme": "價格"
+            },
+            {
+                "entity": "5G",
+                "count": 3,
+                "theme": "技術"
+            },
+            {
+                "entity": "4G",
+                "count": 5,
+                "theme": "技術"
+            },
+            {
+                "entity": "NRCA",
+                "count": 2,
+                "theme": "技術"
+            },
+            {
+                "entity": "Disney+",
+                "count": 1,
+                "theme": "技術"
+            },
+            {
+                "entity": "智能續約",
+                "count": 1,
+                "theme": "技術"
+            },
+            {
+                "entity": "熱點分享",
+                "count": 1,
+                "theme": "技術"
+            },
+            {
+                "entity": "無限速",
+                "count": 1,
+                "theme": "技術"
+            }
+        ]
+    },
+    {
+        "title": "2026年最新4G吃到飽總整理！中華/台哥大/遠傳電信4G網路 ...",
+        "url": "https://www.onion-net.com.tw/news_detail/313",
+        "entities": [
+            {
+                "entity": "中華電信",
+                "count": 7,
+                "theme": "品牌"
+            },
+            {
+                "entity": "台灣大哥大",
+                "count": 6,
+                "theme": "品牌"
+            },
+            {
+                "entity": "遠傳電信",
+                "count": 7,
+                "theme": "品牌"
+            },
+            {
+                "entity": "599元",
+                "count": 1,
+                "theme": "價格"
+            },
+            {
+                "entity": "199元",
+                "count": 3,
+                "theme": "價格"
+            },
+            {
+                "entity": "399元",
+                "count": 3,
+                "theme": "價格"
+            },
+            {
+                "entity": "688元",
+                "count": 1,
+                "theme": "價格"
+            },
+            {
+                "entity": "999元",
+                "count": 1,
+                "theme": "價格"
+            },
+            {
+                "entity": "490元",
+                "count": 1,
+                "theme": "價格"
+            },
+            {
+                "entity": "499元",
+                "count": 3,
+                "theme": "價格"
+            },
+            {
+                "entity": "1280元",
+                "count": 1,
+                "theme": "價格"
+            },
+            {
+                "entity": "4G 吃到飽",
+                "count": 5,
+                "theme": "技術"
+            },
+            {
+                "entity": "不限速",
+                "count": 4,
+                "theme": "技術"
+            },
+            {
+                "entity": "行動網路流量無限制",
+                "count": 1,
+                "theme": "技術"
+            },
+            {
+                "entity": "攜碼",
+                "count": 2,
+                "theme": "技術"
+            },
+            {
+                "entity": "新辦",
+                "count": 2,
+                "theme": "技術"
+            },
+            {
+                "entity": "續約",
+                "count": 2,
+                "theme": "技術"
+            },
+            {
+                "entity": "12Mbps",
+                "count": 1,
+                "theme": "技術"
+            },
+            {
+                "entity": "5G",
+                "count": 1,
+                "theme": "技術"
+            }
+        ]
+    },
+    {
+        "title": "499限速吃到飽方案(24個月)",
+        "url": "https://www.cht.com.tw/home/campaign/4g499",
+        "entities": [
+            {
+                "entity": "中華電信",
+                "count": 7,
+                "theme": "品牌"
+            },
+            {
+                "entity": "499元",
+                "count": 4,
+                "theme": "價格"
+            },
+            {
+                "entity": "4G",
+                "count": 3,
+                "theme": "技術"
+            },
+            {
+                "entity": "無限瀏覽",
+                "count": 3,
+                "theme": "技術"
+            },
+            {
+                "entity": "限速",
+                "count": 3,
+                "theme": "技術"
+            },
+            {
+                "entity": "最高21M",
+                "count": 2,
+                "theme": "技術"
+            },
+            {
+                "entity": "VoLTE",
+                "count": 1,
+                "theme": "技術"
+            },
+            {
+                "entity": "Wi-Fi Calling",
+                "count": 1,
+                "theme": "技術"
+            },
+            {
+                "entity": "NP(攜碼)",
+                "count": 2,
+                "theme": "技術"
+            },
+            {
+                "entity": "租期24個月",
+                "count": 1,
+                "theme": "價格"
+            },
+            {
+                "entity": "網內每通前5分鐘免費",
+                "count": 1,
+                "theme": "技術"
+            },
+            {
+                "entity": "網外內含25分鐘免費",
+                "count": 1,
+                "theme": "技術"
+            },
+            {
+                "entity": "市話內含10分鐘免費",
+                "count": 1,
+                "theme": "技術"
+            }
+        ]
+    }
+]
