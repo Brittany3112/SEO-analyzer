@@ -59,19 +59,30 @@
         }
 
         async function loadChartData() {
+            console.log("開始從 Supabase 抓取資料...");
             const { data, error } = await sbClient.from('seo_data').select('theme, count');
+
             if (error) {
-                console.error('抓取資料失敗', error);
+                console.error('抓取資料失敗：', error);
+                alert('抓取失敗：' + error.message);
                 return;
             }
 
-            // 修改這裡：把 count 欄位的值進行數值加總
+            console.log("成功取得 Supabase 資料：", data);
+
+            if (!data || data.length === 0) {
+                console.warn("警告：seo_data 表格裡面沒有資料！");
+                return;
+            }
+
             let themeCounts = {};
             data.forEach(row => {
                 let theme = row.theme || '未分類';
-                let c = Number(row.count) || 0; // 確保是數字
+                let c = Number(row.count) || 0;
                 themeCounts[theme] = (themeCounts[theme] || 0) + c;
             });
+
+            console.log("整理好的統計結果：", themeCounts);
 
             const labels = Object.keys(themeCounts);
             const values = Object.values(themeCounts);
