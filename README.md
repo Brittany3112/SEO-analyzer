@@ -1,6 +1,8 @@
 # SEO Entity Extraction & Analysis Dashboard
 
 **🌐 Live Dashboard:** https://seo-analyzer-neon-beta.vercel.app/
+**Demo Email:** `demo@example.com`
+**Demo Password:** `demo1234`
 
 ## English Version
 
@@ -184,6 +186,8 @@ This project is for educational and research purposes.
 ## 中文版本
 
 **🌐 線上儀表板:** https://seo-analyzer-neon-beta.vercel.app/
+**Demo 帳號:** `demo@example.com`
+**Demo 密碼:** `demo1234`
 
 ### 📋 專案概述
 
