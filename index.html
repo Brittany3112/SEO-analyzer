@@ -2,39 +2,86 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>4G 吃到飽 SEO 數據儀表板</title>
+    <title id="page-title">SEO 數據儀表板</title>
     <!-- 引入 Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- 引入 Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; }
+        body { font-family: sans-serif; max-width: 900px; margin: 40px auto; padding: 20px; background-color: #f4f6f9; }
         .hidden { display: none; }
-        .card { background: #f9f9f9; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
+        .card { background: #ffffff; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        h1, h3 { color: #333; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; vertical-align: top; }
+        th { background-color: #f8f9fa; }
+        .summary-box { display: flex; gap: 15px; margin-bottom: 20px; }
+        .summary-item { background: #eef2f7; padding: 12px; border-radius: 6px; flex: 1; text-align: center; }
+        .summary-item h4 { margin: 0 0 5px 0; color: #555; font-size: 13px; }
+        .summary-item p { margin: 0; font-size: 16px; font-weight: bold; color: #2c3e50; }
+        .entity-tag { display: inline-block; background: #e2e8f0; padding: 3px 8px; margin: 2px; border-radius: 4px; font-size: 13px; }
     </style>
 </head>
 <body>
 
-    <h1>4G 吃到飽 SEO 數據儀表板</h1>
+    <!-- 動態大標題 -->
+    <h1 id="main-heading">SEO 數據儀表板</h1>
 
     <!-- 登入區塊 -->
     <div id="login-section" class="card">
-        <h3>請先登入</h3>
-        <input type="email" id="email" placeholder="輸入 Email"><br><br>
-        <input type="password" id="password" placeholder="輸入密碼"><br><br>
-        <button type="button" onclick="handleLogin()">登入</button>
-        <p id="login-error" style="color: red;"></p>
+        <h3>請先登入系統</h3>
+        <input type="email" id="email" placeholder="輸入 Email" style="padding: 8px; width: 250px;"><br><br>
+        <input type="password" id="password" placeholder="輸入密碼" style="padding: 8px; width: 250px;"><br><br>
+        <button type="button" onclick="handleLogin()" style="padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">登入</button>
+        <p id="login-error" style="color: red; margin-top: 10px;"></p>
     </div>
 
     <!-- 圖表與內容區塊 -->
     <div id="dashboard-section" class="card hidden">
+        
+        <!-- 動態數據來源基本資料（左上角） -->
+        <div class="summary-box">
+            <div class="summary-item">
+                <h4>Query 關鍵字</h4>
+                <p id="stat-query">-</p>
+            </div>
+            <div class="summary-item">
+                <h4>抓取篇數</h4>
+                <p><span id="stat-articles">0</span> 篇</p>
+            </div>
+            <div class="summary-item">
+                <h4>總分析字數</h4>
+                <p><span id="stat-words">0</span> 字</p>
+            </div>
+            <div class="summary-item">
+                <h4>萃取實體總數</h4>
+                <p><span id="stat-entities">0</span> 個</p>
+            </div>
+        </div>
+
         <h3>主題分群統計圖表</h3>
-        <canvas id="myChart" width="400" height="200"></canvas>
-        <button type="button" onclick="handleLogout()" style="margin-top: 20px;">登出</button>
+        <canvas id="myChart" width="400" height="180"></canvas>
+        <button type="button" onclick="handleLogout()" style="margin-top: 20px; padding: 6px 12px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">登出</button>
+    </div>
+
+    <!-- 依大類別整理的 Entity 總結表格 -->
+    <div class="card">
+        <h3>📊 各主題大類包含的 Entity 與次數統計</h3>
+        <table id="detail-table">
+            <thead>
+                <tr>
+                    <th style="width: 15%;">主題分類</th>
+                    <th style="width: 65%;">包含的小 Entity 列表與出現次數</th>
+                    <th style="width: 20%; text-align: center;">該類別entity個數</th>
+                </tr>
+            </thead>
+            <tbody id="table-body">
+                <!-- JavaScript 動態填入 -->
+            </tbody>
+        </table>
     </div>
 
     <script>
-        // 請確保這裡填入妳真正的 Supabase URL 與 Anon Key
         const SUPABASE_URL = 'https://kmtplcbcgtyjzupseclr.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImttdHBsY2JjZ3R5anp1cHNlY2xyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxNzkyNDAsImV4cCI6MjEwMTc1NTI0MH0.Qg3QajB281MDDqKhc8HymCYaIScDrc-eqv--xiYzwbQ';
 
@@ -59,31 +106,50 @@
         }
 
         async function loadChartData() {
-            console.log("開始從 Supabase 抓取資料...");
-            const { data, error } = await sbClient.from('seo_data').select('theme, count');
+            const { data, error } = await sbClient.from('seo_data').select('title, url, entity, theme, count');
 
             if (error) {
-                console.error('抓取資料失敗：', error);
                 alert('抓取失敗：' + error.message);
                 return;
             }
-
-            console.log("成功取得 Supabase 資料：", data);
 
             if (!data || data.length === 0) {
                 console.warn("警告：seo_data 表格裡面沒有資料！");
                 return;
             }
 
+            // 動態更新基本資料
+            // 計算不重複的文章數
+            const uniqueUrls = [...new Set(data.map(row => row.url))].length;
+            document.getElementById('stat-articles').innerText = uniqueUrls;
+            document.getElementById('stat-query').innerText = query; // 如果有從 JSON 讀取或動態帶入
+
+            // 計算總出現次數或實體總數
+            let totalCountSum = data.reduce((sum, row) => sum + (Number(row.count) || 0), 0);
+            document.getElementById('stat-entities').innerText = data.length; // 總共有幾筆實體紀錄
+            document.getElementById('stat-words').innerText = "約 16,000+"; // 或是從後端帶入總字數
+
+            // --- 1. 處理長條圖與分類聚合數據 ---
             let themeCounts = {};
+            // 用來按主題分類收集 entity 及其總次數：{ 品牌: { "遠傳": 15, "中華": 10 }, ... }
+            let themeEntitiesMap = {};
+
             data.forEach(row => {
                 let theme = row.theme || '未分類';
+                let entity = row.entity;
                 let c = Number(row.count) || 0;
+
+                // 統計圖表用
                 themeCounts[theme] = (themeCounts[theme] || 0) + c;
+
+                // 表格分群用
+                if (!themeEntitiesMap[theme]) {
+                    themeEntitiesMap[theme] = {};
+                }
+                themeEntitiesMap[theme][entity] = (themeEntitiesMap[theme][entity] || 0) + c;
             });
 
-            console.log("整理好的統計結果：", themeCounts);
-
+            // 畫圖
             const labels = Object.keys(themeCounts);
             const values = Object.values(themeCounts);
 
@@ -95,12 +161,41 @@
                     datasets: [{
                         label: 'Entity 主題總次數',
                         data: values,
-                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
                         borderColor: 'rgba(54, 162, 235, 1)',
                         borderWidth: 1
                     }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
                 }
             });
+
+            // --- 2. 填入下方「依大類別分群」的明細表格 ---
+            const tableBody = document.getElementById('table-body');
+            tableBody.innerHTML = "";
+
+            for (const [theme, entitiesObj] of Object.entries(themeEntitiesMap)) {
+                // 計算該主題下的所有 entity 總次數
+                let totalThemeCount = Object.keys(entitiesObj).length;
+
+                // 把該主題底下的小 entity 排版成漂亮的標籤
+                let entitiesHtml = '';
+                for (const [entName, entCount] of Object.entries(entitiesObj)) {
+                    entitiesHtml += `<span class="entity-tag"><b>${entName}</b> (${entCount}次)</span> `;
+                }
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><b style="font-size: 15px; color: #007bff;">${theme}</b></td>
+                    <td>${entitiesHtml}</td>
+                    <td style="text-align: center; font-weight: bold; font-size: 16px;">${totalThemeCount}</td>
+                `;
+                tableBody.appendChild(tr);
+            }
         }
 
         function handleLogout() {
