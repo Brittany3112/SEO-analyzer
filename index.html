@@ -162,7 +162,15 @@
 
                 data.forEach(row => {
                     let theme = row.theme || '未分類';
+                    if (!theme || typeof theme !== 'string') {
+                        theme = '未分類';
+                    }
+                    
                     let entity = row.entity;
+                    if (!entity || typeof entity !== 'string') {
+                        return; // 跳過無效的 entity
+                    }
+                    
                     let c = Number(row.count) || 0;
 
                     themeCounts[theme] = (themeCounts[theme] || 0) + c;
@@ -175,14 +183,17 @@
 
                 // 排序：把「其他」放到最後
                 const sortedThemes = Object.keys(themeCounts).sort((a, b) => {
+                    if (!a || !b) return 0;
                     if (a === '其他') return 1;
                     if (b === '其他') return -1;
-                    return 0;
+                    return a.localeCompare(b, 'zh');
                 });
+
+                console.log("排序後的主題：", sortedThemes);
 
                 // 畫圖
                 const labels = sortedThemes;
-                const values = sortedThemes.map(theme => themeCounts[theme]);
+                const values = sortedThemes.map(theme => themeCounts[theme] || 0);
 
                 const ctx = document.getElementById('myChart').getContext('2d');
                 new Chart(ctx, {
@@ -210,12 +221,16 @@
                 tableBody.innerHTML = "";
 
                 sortedThemes.forEach(theme => {
+                    if (!theme || !themeEntitiesMap[theme]) return;
+                    
                     const entitiesObj = themeEntitiesMap[theme];
                     let totalThemeCount = Object.keys(entitiesObj).length;
 
                     let entitiesHtml = '';
                     for (const [entName, entCount] of Object.entries(entitiesObj)) {
-                        entitiesHtml += `<span class="entity-tag"><b>${entName}</b> (${entCount}次)</span> `;
+                        if (entName && typeof entName === 'string') {
+                            entitiesHtml += `<span class="entity-tag"><b>${entName}</b> (${entCount}次)</span> `;
+                        }
                     }
 
                     const tr = document.createElement('tr');
