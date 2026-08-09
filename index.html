@@ -50,12 +50,12 @@
                 <p><span id="stat-articles">0</span> 篇</p>
             </div>
             <div class="summary-item">
-                <h4>總分析字數</h4>
-                <p><span id="stat-words">0</span> 字</p>
-            </div>
-            <div class="summary-item">
                 <h4>每篇限制字數</h4>
                 <p><span id="stat-limit">0</span> 字</p>
+            </div>
+            <div class="summary-item">
+                <h4>平均字數</h4>
+                <p><span id="stat-words">0</span> 字</p>
             </div>
             <div class="summary-item">
                 <h4>Entity 總數</h4>
@@ -113,12 +113,12 @@
             try {
                 // 先讀取元數據
                 console.log("開始查詢 seo_metadata 表...");
-                const { data: metaData, error: metaError } = await sbClient.from('seo_metadata').select('query, total_words, total_entities_extracted, total_articles, max_words_limit');
+                const { data: metaData, error: metaError } = await sbClient.from('seo_metadata').select('query, avg_words_per_article, total_entities_extracted, total_articles, max_words_limit');
                 
                 console.log("元數據查詢結果：", metaData, "錯誤：", metaError);
                 
                 let queryKeyword = '4G 吃到飽';
-                let totalWordsDisplay = '0';
+                let avgWordsDisplay = '0';
                 let totalEntitiesDisplay = '0';
                 let totalArticlesDisplay = '0';
                 let maxWordsLimitDisplay = '6000';
@@ -129,7 +129,7 @@
                     // 取最後一筆（最新的）
                     const latest = metaData[metaData.length - 1];
                     queryKeyword = latest.query || '4G 吃到飽';
-                    totalWordsDisplay = String(latest.total_words || 0);
+                    avgWordsDisplay = String(latest.avg_words_per_article || 0);
                     totalEntitiesDisplay = String(latest.total_entities_extracted || 0);
                     totalArticlesDisplay = String(latest.total_articles || 0);
                     maxWordsLimitDisplay = String(latest.max_words_limit || 6000);
@@ -140,7 +140,7 @@
                 
                 document.getElementById('stat-query').innerText = queryKeyword;
                 document.getElementById('stat-articles').innerText = totalArticlesDisplay;
-                document.getElementById('stat-words').innerText = totalWordsDisplay;
+                document.getElementById('stat-words').innerText = avgWordsDisplay;
                 document.getElementById('stat-limit').innerText = maxWordsLimitDisplay;
                 document.getElementById('stat-entities').innerText = totalEntitiesDisplay;
                 
