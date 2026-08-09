@@ -7,6 +7,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- 引入 Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- 引入 wordcloud2.js 文字雲套件 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.2.2/wordcloud2.min.js"></script>
     <style>
         body { font-family: sans-serif; max-width: 900px; margin: 40px auto; padding: 20px; background-color: #f4f6f9; }
         .hidden { display: none; }
@@ -20,6 +22,7 @@
         .summary-item h4 { margin: 0 0 5px 0; color: #555; font-size: 13px; }
         .summary-item p { margin: 0; font-size: 16px; font-weight: bold; color: #2c3e50; }
         .entity-tag { display: inline-block; background: #e2e8f0; padding: 3px 8px; margin: 2px; border-radius: 4px; font-size: 13px; }
+        #wordcloud-canvas { width: 100%; height: 350px; background: #fafbfc; border-radius: 6px; border: 1px solid #eee; }
     </style>
 </head>
 <body>
@@ -65,6 +68,11 @@
 
         <h3>主題分群統計圖表</h3>
         <canvas id="myChart" width="400" height="180"></canvas>
+
+        <!-- 新增：文字雲區塊 -->
+        <h3 style="margin-top: 30px;">☁️ 關鍵字文字雲 (Word Cloud)</h3>
+        <canvas id="wordcloud-canvas" width="800" height="350"></canvas>
+
         <button type="button" onclick="handleLogout()" style="margin-top: 20px; padding: 6px 12px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">登出</button>
     </div>
 
@@ -112,10 +120,7 @@
         async function loadChartData() {
             try {
                 // 先讀取元數據
-                console.log("開始查詢 seo_metadata 表...");
                 const { data: metaData, error: metaError } = await sbClient.from('seo_metadata').select('query, avg_words_per_article, total_entities_extracted, total_articles, max_words_limit');
-                
-                console.log("元數據查詢結果：", metaData, "錯誤：", metaError);
                 
                 let queryKeyword = '4G 吃到飽';
                 let avgWordsDisplay = '0';
@@ -123,19 +128,13 @@
                 let totalArticlesDisplay = '0';
                 let maxWordsLimitDisplay = '6000';
                 
-                if (metaError) {
-                    console.error("❌ 元數據表查詢失敗：", metaError.message || metaError);
-                } else if (metaData && metaData.length > 0) {
-                    // 取最後一筆（最新的）
+                if (!metaError && metaData && metaData.length > 0) {
                     const latest = metaData[metaData.length - 1];
                     queryKeyword = latest.query || '4G 吃到飽';
                     avgWordsDisplay = String(latest.avg_words_per_article || 0);
                     totalEntitiesDisplay = String(latest.total_entities_extracted || 0);
                     totalArticlesDisplay = String(latest.total_articles || 0);
                     maxWordsLimitDisplay = String(latest.max_words_limit || 6000);
-                    console.log("✅ 讀取元數據成功：", latest);
-                } else {
-                    console.warn("⚠️ 元數據表為空");
                 }
                 
                 document.getElementById('stat-query').innerText = queryKeyword;
@@ -144,13 +143,8 @@
                 document.getElementById('stat-limit').innerText = maxWordsLimitDisplay;
                 document.getElementById('stat-entities').innerText = totalEntitiesDisplay;
                 
-                console.log("已設置：Query=" + queryKeyword + ", AvgWords=" + avgWordsDisplay + ", Entities=" + totalEntitiesDisplay);
-                
                 // 再讀取 entity 資料
-                console.log("開始查詢 seo_data 表...");
                 const { data, error } = await sbClient.from('seo_data').select('title, url, entity, theme, count');
-
-                console.log("Entity 查詢結果：", data?.length || 0, "筆，錯誤：", error);
 
                 if (error) {
                     alert('抓取失敗：' + error.message);
@@ -165,6 +159,7 @@
                 // --- 1. 處理長條圖與分類聚合數據 ---
                 let themeCounts = {};
                 let themeEntitiesMap = {};
+                let wordCloudMap = {}; // 用於文字雲的總計
 
                 data.forEach(row => {
                     let theme = row.theme || '未分類';
@@ -174,7 +169,7 @@
                     
                     let entity = row.entity;
                     if (!entity || typeof entity !== 'string') {
-                        return; // 跳過無效的 entity
+                        return;
                     }
                     
                     let c = Number(row.count) || 0;
@@ -185,6 +180,9 @@
                         themeEntitiesMap[theme] = {};
                     }
                     themeEntitiesMap[theme][entity] = (themeEntitiesMap[theme][entity] || 0) + c;
+
+                    // 累積文字雲資料（同名 entity 次數相加）
+                    wordCloudMap[entity] = (wordCloudMap[entity] || 0) + c;
                 });
 
                 // 排序：把「其他」放到最後
@@ -195,9 +193,7 @@
                     return a.localeCompare(b, 'zh');
                 });
 
-                console.log("排序後的主題：", sortedThemes);
-
-                // 畫圖
+                // 畫長條圖
                 const labels = sortedThemes;
                 const values = sortedThemes.map(theme => themeCounts[theme] || 0);
 
@@ -222,7 +218,24 @@
                     }
                 });
 
-                // --- 2. 填入下方「依大類別分群」的明細表格 ---
+                // --- 2. 渲染文字雲 (Word Cloud) ---
+                // wordcloud2 需要的格式是 [[word, weight], [word, weight], ...]
+                let wordCloudData = Object.entries(wordCloudMap).map(([word, count]) => {
+                    return [word, count * 3]; // 乘以 3 讓字體大小對比更明顯
+                });
+
+                WordCloud(document.getElementById('wordcloud-canvas'), {
+                    list: wordCloudData,
+                    gridSize: 8,
+                    weightFactor: 2.5,
+                    fontFamily: 'sans-serif',
+                    color: 'random-dark',
+                    backgroundColor: '#fafbfc',
+                    rotateRatio: 0.3,
+                    rotationSteps: 2
+                });
+
+                // --- 3. 填入下方「依大類別分群」的明細表格 ---
                 const tableBody = document.getElementById('table-body');
                 tableBody.innerHTML = "";
 
