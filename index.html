@@ -106,28 +106,51 @@
         }
 
         async function loadChartData() {
-            const { data, error } = await sbClient.from('seo_data').select('title, url, entity, theme, count');
+            try {
+                // 先讀取元數據
+                const { data: metaData, error: metaError } = await sbClient.from('seo_metadata').select('*').order('id', { ascending: false }).limit(1);
+                
+                console.log("元數據查詢結果：", metaData, metaError);
+                
+                let queryKeyword = '4G 吃到飽';
+                let totalWordsDisplay = '0';
+                let totalEntitiesDisplay = '0';
+                
+                if (!metaError && metaData && metaData.length > 0) {
+                    const latest = metaData[0];
+                    queryKeyword = latest.query || '4G 吃到飽';
+                    totalWordsDisplay = latest.total_words || '0';
+                    totalEntitiesDisplay = latest.total_entities_extracted || '0';
+                    console.log("讀取元數據成功：", latest);
+                } else if (metaError) {
+                    console.warn("元數據查詢失敗：", metaError);
+                }
+                
+                document.getElementById('stat-query').innerText = queryKeyword;
+                document.getElementById('stat-words').innerText = totalWordsDisplay;
+                
+                // 再讀取 entity 資料
+                const { data, error } = await sbClient.from('seo_data').select('title, url, entity, theme, count');
 
-            if (error) {
-                alert('抓取失敗：' + error.message);
-                return;
-            }
+                console.log("Entity 查詢結果：", data, error);
 
-            if (!data || data.length === 0) {
-                console.warn("警告：seo_data 表格裡面沒有資料！");
-                return;
-            }
+                if (error) {
+                    alert('抓取失敗：' + error.message);
+                    return;
+                }
 
-            // 動態更新基本資料
-            // 計算不重複的文章數
-            const uniqueUrls = [...new Set(data.map(row => row.url))].length;
-            document.getElementById('stat-articles').innerText = uniqueUrls;
-            document.getElementById('stat-query').innerText = query; // 如果有從 JSON 讀取或動態帶入
+                if (!data || data.length === 0) {
+                    console.warn("警告：seo_data 表格裡面沒有資料！");
+                    return;
+                }
 
-            // 計算總出現次數或實體總數
-            let totalCountSum = data.reduce((sum, row) => sum + (Number(row.count) || 0), 0);
-            document.getElementById('stat-entities').innerText = data.length; // 總共有幾筆實體紀錄
-            document.getElementById('stat-words').innerText = "約 16,000+"; // 或是從後端帶入總字數
+                // 動態更新基本資料
+                // 計算不重複的文章數
+                const uniqueUrls = [...new Set(data.map(row => row.url))].length;
+                document.getElementById('stat-articles').innerText = uniqueUrls;
+                
+                // 使用讀到的元數據或資料列計算
+                document.getElementById('stat-entities').innerText = totalEntitiesDisplay || data.length;
 
             // --- 1. 處理長條圖與分類聚合數據 ---
             let themeCounts = {};
