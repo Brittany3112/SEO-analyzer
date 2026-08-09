@@ -145,79 +145,75 @@
                 }
 
                 // 動態更新基本資料
-                // 計算不重複的文章數
                 const uniqueUrls = [...new Set(data.map(row => row.url))].length;
                 document.getElementById('stat-articles').innerText = uniqueUrls;
-                
-                // 使用讀到的元數據或資料列計算
                 document.getElementById('stat-entities').innerText = totalEntitiesDisplay || data.length;
 
-            // --- 1. 處理長條圖與分類聚合數據 ---
-            let themeCounts = {};
-            // 用來按主題分類收集 entity 及其總次數：{ 品牌: { "遠傳": 15, "中華": 10 }, ... }
-            let themeEntitiesMap = {};
+                // --- 1. 處理長條圖與分類聚合數據 ---
+                let themeCounts = {};
+                let themeEntitiesMap = {};
 
-            data.forEach(row => {
-                let theme = row.theme || '未分類';
-                let entity = row.entity;
-                let c = Number(row.count) || 0;
+                data.forEach(row => {
+                    let theme = row.theme || '未分類';
+                    let entity = row.entity;
+                    let c = Number(row.count) || 0;
 
-                // 統計圖表用
-                themeCounts[theme] = (themeCounts[theme] || 0) + c;
+                    themeCounts[theme] = (themeCounts[theme] || 0) + c;
 
-                // 表格分群用
-                if (!themeEntitiesMap[theme]) {
-                    themeEntitiesMap[theme] = {};
-                }
-                themeEntitiesMap[theme][entity] = (themeEntitiesMap[theme][entity] || 0) + c;
-            });
-
-            // 畫圖
-            const labels = Object.keys(themeCounts);
-            const values = Object.values(themeCounts);
-
-            const ctx = document.getElementById('myChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Entity 主題總次數',
-                        data: values,
-                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: { beginAtZero: true }
+                    if (!themeEntitiesMap[theme]) {
+                        themeEntitiesMap[theme] = {};
                     }
+                    themeEntitiesMap[theme][entity] = (themeEntitiesMap[theme][entity] || 0) + c;
+                });
+
+                // 畫圖
+                const labels = Object.keys(themeCounts);
+                const values = Object.values(themeCounts);
+
+                const ctx = document.getElementById('myChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Entity 主題總次數',
+                            data: values,
+                            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+
+                // --- 2. 填入下方「依大類別分群」的明細表格 ---
+                const tableBody = document.getElementById('table-body');
+                tableBody.innerHTML = "";
+
+                for (const [theme, entitiesObj] of Object.entries(themeEntitiesMap)) {
+                    let totalThemeCount = Object.keys(entitiesObj).length;
+
+                    let entitiesHtml = '';
+                    for (const [entName, entCount] of Object.entries(entitiesObj)) {
+                        entitiesHtml += `<span class="entity-tag"><b>${entName}</b> (${entCount}次)</span> `;
+                    }
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><b style="font-size: 15px; color: #007bff;">${theme}</b></td>
+                        <td>${entitiesHtml}</td>
+                        <td style="text-align: center; font-weight: bold; font-size: 16px;">${totalThemeCount}</td>
+                    `;
+                    tableBody.appendChild(tr);
                 }
-            });
-
-            // --- 2. 填入下方「依大類別分群」的明細表格 ---
-            const tableBody = document.getElementById('table-body');
-            tableBody.innerHTML = "";
-
-            for (const [theme, entitiesObj] of Object.entries(themeEntitiesMap)) {
-                // 計算該主題下的所有 entity 總次數
-                let totalThemeCount = Object.keys(entitiesObj).length;
-
-                // 把該主題底下的小 entity 排版成漂亮的標籤
-                let entitiesHtml = '';
-                for (const [entName, entCount] of Object.entries(entitiesObj)) {
-                    entitiesHtml += `<span class="entity-tag"><b>${entName}</b> (${entCount}次)</span> `;
-                }
-
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><b style="font-size: 15px; color: #007bff;">${theme}</b></td>
-                    <td>${entitiesHtml}</td>
-                    <td style="text-align: center; font-weight: bold; font-size: 16px;">${totalThemeCount}</td>
-                `;
-                tableBody.appendChild(tr);
+            } catch (err) {
+                console.error("loadChartData 出錯：", err);
+                alert("載入數據時發生錯誤：" + err.message);
             }
         }
 
