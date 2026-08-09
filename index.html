@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title id="page-title">SEO 數據儀表板</title>
+    <title id="page-title">SERP 智慧洞察與Entity分析儀表板</title>
     <!-- 引入 Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- 引入 Supabase JS SDK -->
@@ -28,7 +28,7 @@
 <body>
 
     <!-- 動態大標題 -->
-    <h1 id="main-heading">SEO 數據儀表板</h1>
+    <h1 id="main-heading">SERP 智慧洞察與實體分析儀表板</h1>
 
     <!-- 登入區塊 -->
     <div id="login-section" class="card">
@@ -39,7 +39,7 @@
         <p id="login-error" style="color: red; margin-top: 10px;"></p>
     </div>
 
-    <!-- 圖表與內容區塊 -->
+    <!-- 圖表與內容區塊（登入後顯示） -->
     <div id="dashboard-section" class="card hidden">
         
         <!-- 動態數據來源基本資料（左上角） -->
@@ -66,18 +66,17 @@
             </div>
         </div>
 
-        
-        <!-- 新增：文字雲區塊 -->
+        <!-- 文字雲區塊 -->
         <h3 style="margin-top: 30px;">☁️ 關鍵字文字雲 (Word Cloud)</h3>
         <canvas id="wordcloud-canvas" width="800" height="350"></canvas>
         
-        <h3>主題分群統計圖表</h3>
+        <h3 style="margin-top: 30px;">主題分群統計圖表</h3>
         <canvas id="myChart" width="400" height="180"></canvas>
 
     </div>
 
-    <!-- 依大類別整理的 Entity 總結表格 -->
-    <div class="card">
+    <!-- 依大類別整理的 Entity 總結表格（登入後顯示） -->
+    <div id="dashboard-table-section" class="card hidden">
         <h3>📊 各主題大類包含的 Entity 與次數統計</h3>
         <table id="detail-table">
             <thead>
@@ -91,8 +90,7 @@
                 <!-- JavaScript 動態填入 -->
             </tbody>
         </table>
-    <button type="button" onclick="handleLogout()" style="margin-top: 20px; padding: 6px 12px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">登出</button>
-
+        <button type="button" onclick="handleLogout()" style="margin-top: 20px; padding: 6px 12px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">登出</button>
     </div>
 
     <script>
@@ -115,6 +113,7 @@
             } else {
                 document.getElementById('login-section').classList.add('hidden');
                 document.getElementById('dashboard-section').classList.remove('hidden');
+                document.getElementById('dashboard-table-section').classList.remove('hidden');
                 loadChartData();
             }
         }
@@ -161,7 +160,7 @@
                 // --- 1. 處理長條圖與分類聚合數據 ---
                 let themeCounts = {};
                 let themeEntitiesMap = {};
-                let wordCloudMap = {}; // 用於文字雲的總計
+                let wordCloudMap = {}; 
 
                 data.forEach(row => {
                     let theme = row.theme || '未分類';
@@ -183,11 +182,9 @@
                     }
                     themeEntitiesMap[theme][entity] = (themeEntitiesMap[theme][entity] || 0) + c;
 
-                    // 累積文字雲資料（同名 entity 次數相加）
                     wordCloudMap[entity] = (wordCloudMap[entity] || 0) + c;
                 });
 
-                // 排序：把「其他」放到最後
                 const sortedThemes = Object.keys(themeCounts).sort((a, b) => {
                     if (!a || !b) return 0;
                     if (a === '其他') return 1;
@@ -221,9 +218,8 @@
                 });
 
                 // --- 2. 渲染文字雲 (Word Cloud) ---
-                // wordcloud2 需要的格式是 [[word, weight], [word, weight], ...]
                 let wordCloudData = Object.entries(wordCloudMap).map(([word, count]) => {
-                    return [word, count * 3]; // 乘以 3 讓字體大小對比更明顯
+                    return [word, count * 3];
                 });
 
                 WordCloud(document.getElementById('wordcloud-canvas'), {
@@ -237,7 +233,7 @@
                     rotationSteps: 2
                 });
 
-                // --- 3. 填入下方「依大類別分群」的明細表格 ---
+                // --- 3. 填入下方表格 ---
                 const tableBody = document.getElementById('table-body');
                 tableBody.innerHTML = "";
 
