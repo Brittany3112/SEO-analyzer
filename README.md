@@ -1,5 +1,7 @@
 # SEO Entity Extraction & Analysis Dashboard
 
+**🌐 Live Dashboard:** https://seo-analyzer-neon-beta.vercel.app/
+
 ## English Version
 
 ### 📋 Project Overview
@@ -180,6 +182,8 @@ This project is for educational and research purposes.
 ---
 
 ## 中文版本
+
+**🌐 線上儀表板:** https://seo-analyzer-neon-beta.vercel.app/
 
 ### 📋 專案概述
 
