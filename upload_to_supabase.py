@@ -33,7 +33,8 @@ metadata = {
     "total_articles": payload.get("total_articles", 0),
     "total_words": payload.get("total_words", 0),
     "avg_words_per_article": payload.get("avg_words_per_article", 0),
-    "total_entities_extracted": payload.get("total_entities_extracted", 0)
+    "total_entities_extracted": payload.get("total_entities_extracted", 0),
+    "max_words_limit": payload.get("max_words_limit", 6000)
 }
 
 if isinstance(payload, dict):

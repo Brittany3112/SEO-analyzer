@@ -78,7 +78,6 @@ def classify_by_rules(entity_name):
         return "合約"
     if any(k in name for k in tech_keywords):
         return "技術"
-
     # 剩下的全部歸入「其他」（包含串流、家電、外送等）
     return "其他"
 
@@ -176,6 +175,7 @@ if __name__ == "__main__":
         "total_words": total_chars_all,
         "avg_words_per_article": avg_words,
         "total_entities_extracted": total_entities_count,
+        "max_words_limit": MAX_WORDS_LIMIT,
         "data": all_data,
         "articles": all_data,
         "rows": flat_rows

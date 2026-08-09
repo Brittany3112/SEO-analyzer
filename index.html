@@ -54,6 +54,10 @@
                 <p><span id="stat-words">0</span> 字</p>
             </div>
             <div class="summary-item">
+                <h4>每篇限制字數</h4>
+                <p><span id="stat-limit">0</span> 字</p>
+            </div>
+            <div class="summary-item">
                 <h4>Entity 總數</h4>
                 <p><span id="stat-entities">0</span> 個</p>
             </div>
@@ -109,13 +113,15 @@
             try {
                 // 先讀取元數據
                 console.log("開始查詢 seo_metadata 表...");
-                const { data: metaData, error: metaError } = await sbClient.from('seo_metadata').select('query, total_words, total_entities_extracted, total_articles');
+                const { data: metaData, error: metaError } = await sbClient.from('seo_metadata').select('query, total_words, total_entities_extracted, total_articles, max_words_limit');
                 
                 console.log("元數據查詢結果：", metaData, "錯誤：", metaError);
                 
                 let queryKeyword = '4G 吃到飽';
                 let totalWordsDisplay = '0';
                 let totalEntitiesDisplay = '0';
+                let totalArticlesDisplay = '0';
+                let maxWordsLimitDisplay = '6000';
                 
                 if (metaError) {
                     console.error("❌ 元數據表查詢失敗：", metaError.message || metaError);
@@ -125,13 +131,17 @@
                     queryKeyword = latest.query || '4G 吃到飽';
                     totalWordsDisplay = String(latest.total_words || 0);
                     totalEntitiesDisplay = String(latest.total_entities_extracted || 0);
+                    totalArticlesDisplay = String(latest.total_articles || 0);
+                    maxWordsLimitDisplay = String(latest.max_words_limit || 6000);
                     console.log("✅ 讀取元數據成功：", latest);
                 } else {
                     console.warn("⚠️ 元數據表為空");
                 }
                 
                 document.getElementById('stat-query').innerText = queryKeyword;
+                document.getElementById('stat-articles').innerText = totalArticlesDisplay;
                 document.getElementById('stat-words').innerText = totalWordsDisplay;
+                document.getElementById('stat-limit').innerText = maxWordsLimitDisplay;
                 document.getElementById('stat-entities').innerText = totalEntitiesDisplay;
                 
                 console.log("已設置：Query=" + queryKeyword + ", Words=" + totalWordsDisplay + ", Entities=" + totalEntitiesDisplay);
@@ -151,10 +161,6 @@
                     console.warn("警告：seo_data 表格裡面沒有資料！");
                     return;
                 }
-
-                // 動態更新基本資料
-                const uniqueUrls = [...new Set(data.map(row => row.url))].length;
-                document.getElementById('stat-articles').innerText = uniqueUrls;
 
                 // --- 1. 處理長條圖與分類聚合數據 ---
                 let themeCounts = {};
