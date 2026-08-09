@@ -5,6 +5,9 @@ import openai
 import os
 from dotenv import load_dotenv
 
+# 改每篇抓取字數上限，只要改這裡一次就好
+MAX_WORDS_LIMIT = 6000
+
 # 載入 .env 檔案
 load_dotenv()
 
@@ -37,31 +40,47 @@ def fetch_content(url):
         raw_text = soup.get_text(separator=' ', strip=True)
         print(f"-> 該網頁總字數: {len(raw_text)} 字")
 
-        # 這裡可以決定要拿幾字（如果資費方案都在前段，2000字可能夠；但如果是長篇評比，可能需要 4000-5000 字）
-        return raw_text[:6000]
+        # 這裡可以決定要拿幾字
+        return raw_text[:MAX_WORDS_LIMIT], len(raw_text) # 同時回傳截取內容與總字數
     except Exception as e:
-        return f"抓取失敗: {e}"
+        return f"抓取失敗: {e}", 0
 
 
 def classify_by_rules(entity_name):
-    """規則優先：利用關鍵字對照表強制歸類核心項目"""
+    if isinstance(entity_name, dict):
+        entity_name = entity_name.get("entity") or entity_name.get("name") or ""
+    if not isinstance(entity_name, str):
+        entity_name = str(entity_name or "")
     name = entity_name.lower()
 
-    brand_keywords = ["中華", "遠傳", "台灣大哥大", "亞太", "台灣之星"]
-    price_keywords = ["元", "$", "月租", "價格", "費率", "優惠價"]
-    tech_keywords = ["5g", "4g", "不限速", "限速", "熱點", "volte", "網速", "吃到飽"]
-    contract_keywords = ["個月", "年", "綁約", "期限", "合約"] # 統一歸到「合約」
+    # 1. 電信營運商
+    telecom_keywords = ["中華", "遠傳", "台灣大哥大", "亞太", "台灣之星", "cht", "fet", "twm"]    
+    # 2. 手機與硬體品牌/裝置
+    hardware_keywords = [
+        "apple", "samsung", "vivo", "oppo", "小米", "sony", "realme", "htc", "nothing", "asus", "motorola",
+        "iphone", "ipad", "galaxy", "watch", "airpods", "z fold", "空機", "預付卡"
+    ]   
+    # 3. 價格與資費數字
+    price_keywords = ["元", "$", "月租", "價格", "費率", "優惠價", "0元"]    
+    # 4. 合約與方案類型
+    contract_keywords = ["個月", "年", "綁約", "期限", "合約", "銀髮", "學生", "企業", "兒童"]    
+    # 5. 技術與網速規格
+    tech_keywords = ["5g", "4g", "不限速", "限速", "熱點", "volte", "網速", "吃到飽", "mbps", "gb", "上網", "通話"]
 
-    if any(k in name for k in brand_keywords):
-        return "品牌"
+    # 依序進行精細判斷
+    if any(k in name for k in telecom_keywords):
+        return "電信品牌"
+    if any(k in name for k in hardware_keywords):
+        return "手機與硬體"
     if any(k in name for k in price_keywords):
         return "價格"
+    if any(k in name for k in contract_keywords) or "方案" in name:
+        return "合約"
     if any(k in name for k in tech_keywords):
         return "技術"
-    if any(k in name for k in contract_keywords):
-        return "合約" # 確保這裡回傳的是「合約」，絕對不是「合約時間」
 
-    return None
+    # 剩下的全部歸入「其他」（包含串流、家電、外送等）
+    return "其他"
 
 def analyze_entities(content):
     print("正在透過 AI 提取 Entity 與分群...")
@@ -90,39 +109,50 @@ def analyze_entities(content):
         print(f"AI 分析失敗: {e}")
         return []
 
-# 執行測試
 if __name__ == "__main__":
     keyword = input("請輸入關鍵字: ") or "4G 吃到飽"
     search_results = get_serp_data(keyword)
 
     all_data = []
+    flat_rows = []
+    total_chars_all = 0  # 累積總字數
+    total_entities_count = 0  # 累積萃取出的實體總數
+
     for idx, item in enumerate(search_results):
-        print(item)
-        content = fetch_content(item['link'])
+        content, raw_len = fetch_content(item['link'])
+        total_chars_all += raw_len  # 把這篇的字數加進總和
+
         raw_entities = analyze_entities(content)
-        print(raw_entities)
 
         entities = []
         for entity_item in raw_entities:
-            entity_name = entity_item.get("entity", "")
-            ai_suggested_theme = entity_item.get("suggested_theme", "技術")
+            if isinstance(entity_item, dict):
+                entity_name = entity_item.get("entity") or entity_item.get("name") or ""
+            else:
+                entity_name = entity_item
 
-            if not entity_name:
+            if not isinstance(entity_name, str) or not entity_name.strip():
                 continue
 
-            # 1. 優先使用規則分類
             theme = classify_by_rules(entity_name)
-
-            # 2. 如果規則認不出來，用 AI 建議
             if not theme:
-                theme = "技術"
+                continue
 
-            # 4. 執行精確計數
             exact_count = content.count(entity_name)
             if exact_count == 0:
                 exact_count = 1
 
-            entities.append({
+            entity_entry = {
+                "entity": entity_name,
+                "count": exact_count,
+                "theme": theme
+            }
+            entities.append(entity_entry)
+            total_entities_count += 1  # 實體數加 1
+
+            flat_rows.append({
+                "title": item['title'],
+                "url": item['link'],
                 "entity": entity_name,
                 "count": exact_count,
                 "theme": theme
@@ -134,8 +164,23 @@ if __name__ == "__main__":
             "entities": entities
         }
         all_data.append(page_data)
-        print(f"完成分析第 {idx + 1} 篇文章，精算後有效實體數: {len(entities)}")
+
+    # 計算平均每篇文章字數
+    articles_count = len(search_results)
+    avg_words = int(total_chars_all / articles_count) if articles_count > 0 else 0
+
+    # 升級版的豐富中繼資料
+    output_payload = {
+        "query": keyword,
+        "total_articles": articles_count,
+        "total_words": total_chars_all,
+        "avg_words_per_article": avg_words,
+        "total_entities_extracted": total_entities_count,
+        "data": all_data,
+        "articles": all_data,
+        "rows": flat_rows
+    }
 
     with open("results.json", "w", encoding="utf-8") as f:
-        json.dump(all_data, f, ensure_ascii=False, indent=4)
-    print("分析完成，資料已存至 results.json")
+        json.dump(output_payload, f, ensure_ascii=False, indent=4)
+    print("分析完成，豐富的中繼資料已存至 results.json")
