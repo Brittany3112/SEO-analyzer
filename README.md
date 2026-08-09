@@ -36,7 +36,7 @@ A flexible, production-ready SEO data analysis tool that searches any keyword, s
 - HTML5 + Vanilla JavaScript
 - Supabase JS SDK v2 (real-time database)
 - Chart.js (interactive visualizations)
-- **Deployed on Vercel** (serverless hosting)
+- **Deployed on Vercel** (serverless hosting, connect with GitHub)
 
 **Database:**
 - Supabase PostgreSQL (managed cloud database)
@@ -119,7 +119,7 @@ Google Search → Scrape Websites → Extract Entities (AI)
 - title: source article title
 - url: source URL
 - entity: entity name
-- theme: category (電信品牌, 手機與硬體, 價格, 合約, 技術, 其他)
+- theme: category (Telecom Brands, Mobile Phones & Hardware, Prices, Contracts, Technology, Other)
 - count: occurrence count in content
 
 ### ⚙️ Configuration
@@ -169,13 +169,26 @@ git push origin main
 - Handles network timeouts gracefully
 - Comprehensive console logging for debugging
 
+### � Use Cases
+
+- **Market Research**: Analyze competitor mentions and market trends
+- **SEO Analysis**: Track entity mentions across search results
+- **Product Research**: Extract product features and pricing from web content
+- **Industry Monitoring**: Track mentions of companies, technologies, or trends
+- **Content Analysis**: Extract and categorize key topics from any domain
+- **Competitive Intelligence**: Monitor competitor information across the web
+
 ### 📈 Future Enhancements
 
 - Export data to CSV/Excel
-- Advanced filtering and search
-- Historical data comparison
-- Custom theme templates
-- Multi-language support
+- Advanced filtering and search capabilities
+- Historical data comparison and trends
+- Custom theme templates and rules editor
+- Real-time data updates via webhooks
+- Multi-language entity extraction
+- Sentiment analysis integration
+- API endpoint for programmatic access
+- Batch processing for multiple queries
 
 ### 📝 License
 
@@ -219,7 +232,7 @@ This project is for educational and research purposes.
 - HTML5 + 原生 JavaScript
 - Supabase JS SDK v2（實時資料庫）
 - Chart.js（互動式可視化）
-- **部署在 Vercel**（無伺服器主機）
+- **部署在 Vercel**（無伺服器主機, 以Github連接）
 
 **資料庫：**
 - Supabase PostgreSQL（管理型雲端資料庫）
@@ -351,27 +364,6 @@ git push origin main
 - 過濾掉空值/null 實體
 - 優雅處理網路逾時
 - 提供詳細的主控台日誌用於除錯
-
-### � Use Cases
-
-- **Market Research**: Analyze competitor mentions and market trends
-- **SEO Analysis**: Track entity mentions across search results
-- **Product Research**: Extract product features and pricing from web content
-- **Industry Monitoring**: Track mentions of companies, technologies, or trends
-- **Content Analysis**: Extract and categorize key topics from any domain
-- **Competitive Intelligence**: Monitor competitor information across the web
-
-### 📈 Future Enhancements
-
-- Export data to CSV/Excel
-- Advanced filtering and search capabilities
-- Historical data comparison and trends
-- Custom theme templates and rules editor
-- Real-time data updates via webhooks
-- Multi-language entity extraction
-- Sentiment analysis integration
-- API endpoint for programmatic access
-- Batch processing for multiple queries
 
 ### � 使用案例
 
