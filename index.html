@@ -66,14 +66,14 @@
             </div>
         </div>
 
-        <h3>主題分群統計圖表</h3>
-        <canvas id="myChart" width="400" height="180"></canvas>
-
+        
         <!-- 新增：文字雲區塊 -->
         <h3 style="margin-top: 30px;">☁️ 關鍵字文字雲 (Word Cloud)</h3>
         <canvas id="wordcloud-canvas" width="800" height="350"></canvas>
+        
+        <h3>主題分群統計圖表</h3>
+        <canvas id="myChart" width="400" height="180"></canvas>
 
-        <button type="button" onclick="handleLogout()" style="margin-top: 20px; padding: 6px 12px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">登出</button>
     </div>
 
     <!-- 依大類別整理的 Entity 總結表格 -->
@@ -91,6 +91,8 @@
                 <!-- JavaScript 動態填入 -->
             </tbody>
         </table>
+    <button type="button" onclick="handleLogout()" style="margin-top: 20px; padding: 6px 12px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">登出</button>
+
     </div>
 
     <script>
