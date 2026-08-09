@@ -108,7 +108,7 @@
         async function loadChartData() {
             try {
                 // 先讀取元數據
-                const { data: metaData, error: metaError } = await sbClient.from('seo_metadata').select('*').order('id', { ascending: false }).limit(1);
+                const { data: metaData, error: metaError } = await sbClient.from('seo_metadata').select('*');
                 
                 console.log("元數據查詢結果：", metaData, metaError);
                 
@@ -117,10 +117,11 @@
                 let totalEntitiesDisplay = '0';
                 
                 if (!metaError && metaData && metaData.length > 0) {
-                    const latest = metaData[0];
+                    // 取最後一筆（最新的）
+                    const latest = metaData[metaData.length - 1];
                     queryKeyword = latest.query || '4G 吃到飽';
-                    totalWordsDisplay = latest.total_words || '0';
-                    totalEntitiesDisplay = latest.total_entities_extracted || '0';
+                    totalWordsDisplay = String(latest.total_words || 0);
+                    totalEntitiesDisplay = String(latest.total_entities_extracted || 0);
                     console.log("讀取元數據成功：", latest);
                 } else if (metaError) {
                     console.warn("元數據查詢失敗：", metaError);
@@ -128,11 +129,12 @@
                 
                 document.getElementById('stat-query').innerText = queryKeyword;
                 document.getElementById('stat-words').innerText = totalWordsDisplay;
+                document.getElementById('stat-entities').innerText = totalEntitiesDisplay;
                 
                 // 再讀取 entity 資料
                 const { data, error } = await sbClient.from('seo_data').select('title, url, entity, theme, count');
 
-                console.log("Entity 查詢結果：", data, error);
+                console.log("Entity 查詢結果：", data?.length || 0, "筆，錯誤：", error);
 
                 if (error) {
                     alert('抓取失敗：' + error.message);
@@ -147,7 +149,6 @@
                 // 動態更新基本資料
                 const uniqueUrls = [...new Set(data.map(row => row.url))].length;
                 document.getElementById('stat-articles').innerText = uniqueUrls;
-                document.getElementById('stat-entities').innerText = totalEntitiesDisplay || data.length;
 
                 // --- 1. 處理長條圖與分類聚合數據 ---
                 let themeCounts = {};
@@ -166,9 +167,16 @@
                     themeEntitiesMap[theme][entity] = (themeEntitiesMap[theme][entity] || 0) + c;
                 });
 
+                // 排序：把「其他」放到最後
+                const sortedThemes = Object.keys(themeCounts).sort((a, b) => {
+                    if (a === '其他') return 1;
+                    if (b === '其他') return -1;
+                    return 0;
+                });
+
                 // 畫圖
-                const labels = Object.keys(themeCounts);
-                const values = Object.values(themeCounts);
+                const labels = sortedThemes;
+                const values = sortedThemes.map(theme => themeCounts[theme]);
 
                 const ctx = document.getElementById('myChart').getContext('2d');
                 new Chart(ctx, {
@@ -195,7 +203,8 @@
                 const tableBody = document.getElementById('table-body');
                 tableBody.innerHTML = "";
 
-                for (const [theme, entitiesObj] of Object.entries(themeEntitiesMap)) {
+                sortedThemes.forEach(theme => {
+                    const entitiesObj = themeEntitiesMap[theme];
                     let totalThemeCount = Object.keys(entitiesObj).length;
 
                     let entitiesHtml = '';
@@ -210,7 +219,7 @@
                         <td style="text-align: center; font-weight: bold; font-size: 16px;">${totalThemeCount}</td>
                     `;
                     tableBody.appendChild(tr);
-                }
+                });
             } catch (err) {
                 console.error("loadChartData 出錯：", err);
                 alert("載入數據時發生錯誤：" + err.message);
