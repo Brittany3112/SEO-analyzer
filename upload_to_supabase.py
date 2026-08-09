@@ -34,7 +34,7 @@ metadata = {
     "total_words": payload.get("total_words", 0),
     "avg_words_per_article": payload.get("avg_words_per_article", 0),
     "total_entities_extracted": payload.get("total_entities_extracted", 0)
-}}
+}
 
 if isinstance(payload, dict):
     if isinstance(payload.get("rows"), list):
