@@ -95,7 +95,7 @@ def fetch_content(url):
         extraction_method = "trafilatura"
 
         # 如果正文太短，使用 BeautifulSoup 備援
-        if not content or len(content.strip()) < 1000:
+        if not content or len(content.strip()) < 500:
             content = fallback_extract_content(html)
             extraction_method = "beautifulsoup_fallback"
 
