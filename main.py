@@ -1,12 +1,15 @@
+from numpy import rint
 import requests
 from bs4 import BeautifulSoup
+import trafilatura
 import json
 import openai
 import os
+import re
 from dotenv import load_dotenv
 
 # 改每篇抓取字數上限，只要改這裡一次就好
-MAX_WORDS_LIMIT = 6000
+MAX_CHARS_LIMIT = 6000
 
 # 載入 .env 檔案
 load_dotenv()
@@ -25,23 +28,141 @@ def get_serp_data(query):
     return response.json().get('organic', [])[:10]
 
 
+def clean_text(text):
+    """清除多餘空白與空行"""
+    if not text:
+        return ""
+
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r"\n\s*\n+", "\n\n", text)
+
+    return text.strip()
+
+
+def fallback_extract_content(html):
+    """
+    如果 trafilatura 抽取失敗，
+    優先從 article、main 或 articleBody 抓正文。
+    """
+    soup = BeautifulSoup(html, "html.parser")
+
+    # 移除明顯不是文章正文的區塊
+    for tag in soup([
+        "script",
+        "style",
+        "nav",
+        "header",
+        "footer",
+        "aside",
+        "form",
+        "noscript",
+        "iframe"
+    ]):
+        tag.decompose()
+
+    # 常見的文章正文 CSS selector
+    selectors = [
+        "article",
+        "main",
+        '[itemprop="articleBody"]',
+        ".article-content",
+        ".post-content",
+        ".entry-content",
+        "#article-content",
+        "#content"
+    ]
+
+    candidates = []
+
+    for selector in selectors:
+        candidates.extend(soup.select(selector))
+
+    if candidates:
+        # 如果找到多個區塊，選文字最多的那一個
+        main_content = max(
+            candidates,
+            key=lambda tag: len(tag.get_text(" ", strip=True))
+        )
+    else:
+        # 最後才退回 body
+        main_content = soup.body or soup
+
+    text = main_content.get_text(separator="\n", strip=True)
+
+    return clean_text(text)
+
+
 def fetch_content(url):
     try:
-        print(f"正在抓取內文: {url}")
-        res = requests.get(url, timeout=10)
-        res.encoding = 'utf-8'
-        soup = BeautifulSoup(res.text, 'html.parser')
+        print(f"正在抓取文章正文: {url}")
 
-        # 拿掉 script 和 style
-        for script in soup(["script", "style"]):
-            script.extract()
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                "AppleWebKit/537.36 Chrome/124.0 Safari/537.36"
+            ),
+            "Accept-Language": "zh-TW,zh;q=0.9,en;q=0.8"
+        }
 
-        raw_text = soup.get_text(separator=' ', strip=True)
-        print(f"-> 該網頁總字數: {len(raw_text)} 字")
+        response = requests.get(
+            url,
+            headers=headers,
+            timeout=15,
+            allow_redirects=True
+        )
 
-        return raw_text[:MAX_WORDS_LIMIT], len(raw_text)
+        response.raise_for_status()
+
+        # 不要強制固定 utf-8，避免部分網站亂碼
+        response.encoding = response.apparent_encoding or response.encoding
+
+        html = response.text
+
+        # 第一優先：使用 trafilatura 擷取主要正文
+        content = trafilatura.extract(
+            html,
+            url=url,
+            output_format="txt",
+            include_comments=False,
+            include_tables=True,
+            include_images=False,
+            include_links=False,
+            favor_precision=True
+        )
+
+        extraction_method = "trafilatura"
+
+        # 如果正文太短，使用 BeautifulSoup 備援
+        if not content or len(content.strip()) < 200:
+            content = fallback_extract_content(html)
+            extraction_method = "beautifulsoup_fallback"
+
+        content = clean_text(content)
+
+        if not content:
+            print("-> 找不到文章正文")
+            return "", 0
+
+        full_content_length = len(content)
+
+        # 只把前 MAX_CHARS_LIMIT 個字元送給 AI
+        limited_content = content[:MAX_CHARS_LIMIT]
+
+        print(
+            f"-> 抽取方式: {extraction_method}"
+        )
+        print(
+            f"-> 正文總長度: {full_content_length} 字元"
+        )
+        print(
+            f"-> 送入 AI: {len(limited_content)} 字元"
+        )
+
+        return limited_content, full_content_length
+
     except Exception as e:
-        return f"抓取失敗: {e}", 0
+        print(f"-> 抓取失敗: {e}")
+        return "", 0
 
 
 def classify_by_rules(entity_name):
@@ -113,6 +234,14 @@ def analyze_entities_ai(content):
 
 
 if __name__ == "__main__":
+    # 測試抓取文章正文
+    test_url = "https://www.fetnet.net/content/cbu/estore/exclusive/499.html"
+    content, length = fetch_content(test_url)
+
+    print("\n===== 抽取後的正文 =====\n")
+    print(content[:3000])
+
+
     keyword = input("請輸入關鍵字: ") or "4G 吃到飽"
     search_results = get_serp_data(keyword)
 
@@ -126,6 +255,9 @@ if __name__ == "__main__":
 
     for idx, item in enumerate(search_results):
         content, raw_len = fetch_content(item['link'])
+        if not content:
+            print(f"第 {idx + 1} 篇無法取得正文，跳過")
+            continue
         total_chars_all += raw_len  
 
         entities = []
@@ -243,7 +375,7 @@ if __name__ == "__main__":
         "total_words": total_chars_all,
         "avg_words_per_article": avg_words,
         "total_entities_extracted": total_entities_count,
-        "max_words_limit": MAX_WORDS_LIMIT,
+        "max_chars_limit": MAX_CHARS_LIMIT,
         "data": all_data,
         "articles": all_data,
         "rows": flat_rows
