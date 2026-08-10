@@ -196,14 +196,14 @@ def analyze_entities_ai(content):
 
 
 if __name__ == "__main__":
-    """"
-    # 測試抓取文章正文
-    test_url = "https://www.fetnet.net/content/cbu/estore/exclusive/499.html"
-    content, length = fetch_content(test_url)
+    
+    # # 測試抓取文章正文
+    # test_url = "https://www.fetnet.net/content/cbu/estore/exclusive/499.html"
+    # content, length = fetch_content(test_url)
 
-    print("\n===== 抽取後的正文 =====\n")
-    print(content[:3000])
-    """
+    # print("\n===== 抽取後的正文 =====\n")
+    # print(content[:3000])
+    
 
     keyword = input("請輸入關鍵字: ") or "4G 吃到飽"
     search_results = get_serp_data(keyword)
