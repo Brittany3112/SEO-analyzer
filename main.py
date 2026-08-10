@@ -40,57 +40,19 @@ def clean_text(text):
 
 
 def fallback_extract_content(html):
-    """
-    如果 trafilatura 抽取失敗，
-    優先從 article、main 或 articleBody 抓正文。
-    """
     soup = BeautifulSoup(html, "html.parser")
 
-    # 移除明顯不是文章正文的區塊
-    for tag in soup([
-        "script",
-        "style",
-        "nav",
-        "header",
-        "footer",
-        "aside",
-        "form",
-        "noscript",
-        "iframe"
-    ]):
+    # 移除隱藏與程式碼區塊
+    for tag in soup(["script", "style", "nav", "header", "footer", "noscript", "iframe"]):
         tag.decompose()
 
-    # 常見的文章正文 CSS selector
-    selectors = [
-        "article",
-        "main",
-        '[itemprop="articleBody"]',
-        ".article-content",
-        ".post-content",
-        ".entry-content",
-        "#article-content",
-        "#content"
-    ]
-
-    candidates = []
-
-    for selector in selectors:
-        candidates.extend(soup.select(selector))
-
-    if candidates:
-        # 如果找到多個區塊，選文字最多的那一個
-        main_content = max(
-            candidates,
-            key=lambda tag: len(tag.get_text(" ", strip=True))
-        )
+    # 直接暴力抓取 body 內的所有文字，並用空格隔開
+    if soup.body:
+        text = soup.body.get_text(separator=" ", strip=True)
     else:
-        # 最後才退回 body
-        main_content = soup.body or soup
-
-    text = main_content.get_text(separator="\n", strip=True)
+        text = soup.get_text(separator=" ", strip=True)
 
     return clean_text(text)
-
 
 def fetch_content(url):
     try:
@@ -133,7 +95,7 @@ def fetch_content(url):
         extraction_method = "trafilatura"
 
         # 如果正文太短，使用 BeautifulSoup 備援
-        if not content or len(content.strip()) < 200:
+        if not content or len(content.strip()) < 1000:
             content = fallback_extract_content(html)
             extraction_method = "beautifulsoup_fallback"
 
@@ -234,13 +196,14 @@ def analyze_entities_ai(content):
 
 
 if __name__ == "__main__":
+    """"
     # 測試抓取文章正文
     test_url = "https://www.fetnet.net/content/cbu/estore/exclusive/499.html"
     content, length = fetch_content(test_url)
 
     print("\n===== 抽取後的正文 =====\n")
     print(content[:3000])
-
+    """
 
     keyword = input("請輸入關鍵字: ") or "4G 吃到飽"
     search_results = get_serp_data(keyword)

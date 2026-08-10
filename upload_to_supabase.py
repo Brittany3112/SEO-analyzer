@@ -33,9 +33,12 @@ metadata = {
     "total_articles": payload.get("total_articles", 0),
     "total_words": payload.get("total_words", 0),
     "avg_words_per_article": payload.get("avg_words_per_article", 0),
-    "total_entities_extracted": payload.get("total_entities_extracted", 0),
-    "max_chars_limit": payload.get("max_chars_limit", 6000)
+    "total_entities_extracted": payload.get("total_entities_extracted", 0)
 }
+
+# main.py 會輸出 max_chars_limit，若 Supabase schema 有此欄位則一併儲存
+if payload.get("max_chars_limit") is not None:
+    metadata["max_chars_limit"] = payload["max_chars_limit"]
 
 if isinstance(payload, dict):
     if isinstance(payload.get("rows"), list):
@@ -77,7 +80,18 @@ try:
     supabase.table("seo_metadata").insert([metadata]).execute()
     print("元數據已成功上傳！")
 except Exception as e:
-    print(f"上傳元數據時發生錯誤：{e}")
+    error_str = str(e)
+    if "max_chars_limit" in error_str and ("schema cache" in error_str or "Could not find" in error_str):
+        print("Supabase schema 未包含 max_chars_limit，改為不傳該欄位後重試。")
+        metadata.pop("max_chars_limit", None)
+        try:
+            supabase.table("seo_metadata").delete().neq("id", 0).execute()
+            supabase.table("seo_metadata").insert([metadata]).execute()
+            print("元數據已成功上傳（已移除 max_chars_limit 欄位）！")
+        except Exception as e2:
+            print(f"上傳元數據時再次發生錯誤：{e2}")
+    else:
+        print(f"上傳元數據時發生錯誤：{e}")
 
 # 再上傳實體資料
 if rows_to_insert:
