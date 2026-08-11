@@ -41,6 +41,11 @@
 
     <!-- 圖表與內容區塊（登入後顯示） -->
     <div id="dashboard-section" class="card hidden">
+        <div class="search-container" style="padding: 20px; text-align: center;">
+            <input type="text" id="keywordInput" placeholder="輸入關鍵字 (如: 5G 吃到飽)" style="padding: 10px; width: 300px;">
+            <button onclick="startAnalysis()" id="analyzeBtn" style="padding: 10px 20px; cursor: pointer;">開始即時分析</button>
+            <p id="statusMsg" style="margin-top: 10px; color: blue;"></p>
+        </div>
         
         <!-- 動態數據來源基本資料（左上角） -->
         <div class="summary-box">
@@ -99,6 +104,35 @@
 
         const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        async function startAnalysis() {
+            const keyword = document.getElementById('keywordInput').value;
+            const btn = document.getElementById('analyzeBtn');
+            const msg = document.getElementById('statusMsg');
+            if (!keyword) return alert('請輸入關鍵字');
+
+                btn.disabled = true;
+                msg.innerText = '正在爬取並分析數據，請稍候約 30-60 秒...';
+
+                try {
+                    const response = await fetch('/api', {
+                        method: 'POST',
+                        body: JSON.stringify({ keyword: keyword }),
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+
+                    if (response.ok) {
+                        msg.innerText = '分析完成！正在刷新圖表...';
+                        setTimeout(() => location.reload(), 2000); // 刷新頁面顯示新數據
+                    } else {
+                        msg.innerText = '分析失敗，請檢查 Vercel Logs';
+                    }
+                } catch (e) {
+                    msg.innerText = '連線錯誤';
+                } finally {
+                    btn.disabled = false;
+                }
+            }
+        
         async function handleLogin() {
             const emailField = document.getElementById('email').value;
             const passwordField = document.getElementById('password').value;
@@ -268,6 +302,16 @@
             sbClient.auth.signOut();
             location.reload();
         }
+        // 頁面載入時自動檢查登入狀態
+(async function checkSession() {
+    const { data: { session } } = await sbClient.auth.getSession();
+    if (session) {
+        document.getElementById('login-section').classList.add('hidden');
+        document.getElementById('dashboard-section').classList.remove('hidden');
+        document.getElementById('dashboard-table-section').classList.remove('hidden');
+        loadChartData();
+    }
+})();
     </script>
 </body>
 </html>
