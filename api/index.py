@@ -64,7 +64,9 @@ class handler(BaseHTTPRequestHandler):
                     ai_entities = self.analyze_with_ai(content, keyword)
                     seen_entities = set()
 
-                    # AI 只提出候選 Entity；Python 以原文驗證並重新計數
+                                        # AI 只提出候選 Entity；Python 以原文驗證並重新計數
+                    article_rows = []
+
                     for entity_item in ai_entities:
                         if not isinstance(entity_item, dict):
                             continue
@@ -82,16 +84,20 @@ class handler(BaseHTTPRequestHandler):
 
                         theme = str(entity_item.get("theme", "其他")).strip() or "其他"
 
-                        supabase.table("seo_data").insert({
+                        # 先放進清單，暫時不要立刻寫入 Supabase
+                        article_rows.append({
                             "title": title,
                             "url": url,
                             "entity": entity_name,
                             "count": exact_count,
                             "theme": theme,
-                        }).execute()
+                        })
 
+                    # 一篇文章的所有 Entity 都整理完後，只發送一次 Supabase request
+                    if article_rows:
+                        supabase.table("seo_data").insert(article_rows).execute()
                         article_has_data = True
-                        total_entities += 1
+                        total_entities += len(article_rows)
 
                     # 只有至少寫入一個 Entity，才算這篇文章成功進入 seo_data
                     if article_has_data:
