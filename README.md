@@ -1,395 +1,356 @@
 # SEO Entity Extraction & Analysis Dashboard
 
-* **🌐 Live Dashboard:** https://seo-analyzer-neon-beta.vercel.app/
-* **Demo Email:** `demo@example.com`
-* **Demo Password:** `demo0808`
+[繁體中文](#繁體中文) | [English](#english)
 
-## English Version
+> A cloud-deployed SEO research dashboard that turns a user-entered keyword into auditable, article-level Entity data: SERP retrieval, full-page content extraction, AI Entity extraction, global dynamic clustering, Supabase storage, and authenticated visualisation.
 
-### 📋 Project Overview
+| Link | Details |
+|---|---|
+| Live dashboard | https://seo-analyzer-neon-beta.vercel.app/ |
+| Repository | https://github.com/Brittany3112/SEO-analyzer |
+| Demo email | `demo@example.com` |
+| Demo password | `demo0808` |
 
-A flexible, production-ready SEO data analysis tool that searches any keyword, scrapes search results, extracts entities using AI, classifies them by customizable themes, and visualizes the results in an interactive dashboard. Built with Python backend, Supabase cloud database, and deployed on Vercel.
+---
 
-### ✨ Features
+## English
 
-- **Flexible Web Scraping**: Search any keyword using Serper API and scrape content from top results
-- **AI-Powered Entity Extraction**: Uses OpenAI GPT-4o-mini to intelligently extract relevant entities from content
-- **Rule-Based Classification**: Customizable classification system for categorizing entities by theme
-- **Cloud Database**: Scalable data storage and management using Supabase PostgreSQL
-- **Interactive Dashboard**: Web-based visualization deployed on Vercel with:
-  - Real-time summary statistics
-  - Theme distribution visualization
-  - Detailed entity listing with occurrence counts
-  - User authentication & RLS security
-  - Responsive design for all devices
+### Overview
 
-### 🔧 Tech Stack
+**SEO Entity Extraction & Analysis Dashboard** is a full-stack prototype for analysing the Google SERP of any user-entered keyword. After a signed-in user submits a keyword, the Vercel serverless API retrieves up to ten Taiwanese Google organic results through Serper, fetches accessible article content, extracts verifiable Entities with OpenAI, groups all validated Entities globally into query-specific themes, stores the results in Supabase, and refreshes the dashboard.
 
-**Backend:**
-- Python 3.x
-- requests, BeautifulSoup4 (web scraping)
-- OpenAI API (entity extraction)
-- Supabase Python SDK (database operations)
-- python-dotenv (environment management)
+The design deliberately distinguishes **SERP results returned**, **articles successfully analysed**, **article-level Entity rows**, and **unique Entities**. This prevents unavailable pages, empty content, or unverified AI suggestions from being presented as completed analysis.
 
-**Frontend & Deployment:**
-- HTML5 + Vanilla JavaScript
-- Supabase JS SDK v2 (real-time database)
-- Chart.js (interactive visualizations)
-- **Deployed on Vercel** (serverless hosting, connect with GitHub)
+### Core Features
 
-**Database:**
-- Supabase PostgreSQL (managed cloud database)
-- Row-Level Security (RLS) for access control
-- Two main tables: `seo_metadata` and `seo_data`
+| Area | Implementation |
+|---|---|
+| Keyword input | The signed-in user can submit any keyword directly from the deployed dashboard. |
+| SERP retrieval | Serper.dev is called with `gl=tw`, `hl=zh-tw`, and `num=10` to request up to ten organic results. |
+| Full-content-only policy | The API retrieves the source page itself; SERP snippets are **not** used as a fallback for blocked or inaccessible pages. |
+| Entity validation | Every AI-proposed Entity is verified with `content.count(entity)` before it is persisted. |
+| Two-stage AI workflow | Stage 1 extracts Entities per article without local categories. Stage 2 clusters the complete validated Entity set globally for the query. |
+| Dynamic themes | The clustering step creates at most five query-specific primary themes. Any remaining or ambiguous item is assigned to `其他` (Other). |
+| Cloud data layer | Article-level Entity records and session metadata are batch-inserted into Supabase PostgreSQL. |
+| Authenticated dashboard | Supabase Auth gates dashboard access. The frontend reads results through the Supabase client; server-side credentials remain in Vercel environment variables. |
+| Visualisation | Chart.js renders the number of unique Entities per theme; WordCloud2.js displays aggregated Entity frequency; the table shows article-aggregated Entity occurrence counts. |
+| Debug logging | Vercel Logs record SERP count, each article's extraction length, candidate and validated Entity counts, failures, final totals, clustering themes, and batch insert status. |
 
-### 📁 Project Structure
+### Architecture and Data Flow
 
-```
-4G_AllYouCanEat/
-├── main.py                      # Web scraper & entity extraction
-├── upload_to_supabase.py        # Data uploader to Supabase
-├── index.html                   # Interactive dashboard
-├── results.json                 # Output data file
-├── .env                         # Environment variables (not tracked)
-└── README.md                    # This file
-```
-
-### 🚀 Quick Start
-
-#### Prerequisites
-
-- Python 3.8+
-- Google Serper API key
-- OpenAI API key
-- Supabase project (URL & API key)
-
-#### Installation
-
-1. **Clone/Setup the project**
-```bash
-cd 4G_AllYouCanEat
-pip install -r requirements.txt  # or install individually
+```text
+Authenticated user enters a keyword
+        ↓
+index.html sends POST /api { "keyword": "..." }
+        ↓
+Vercel Serverless Function: api/index.py
+        ↓
+Serper.dev: request up to 10 Taiwanese organic search results
+        ↓
+For each returned result: fetch source page → extract article/main/body text
+        ↓
+Stage 1: OpenAI Entity extraction per article (no per-article theme assignment)
+        ↓
+Python exact-text validation: content.count(entity) > 0
+        ↓
+Aggregate unique validated Entities across all successful articles
+        ↓
+Stage 2: OpenAI global dynamic clustering (≤ 5 themes + 其他)
+        ↓
+Batch insert seo_data + insert seo_metadata in Supabase
+        ↓
+Dashboard reloads and visualises the latest analysis
 ```
 
-2. **Configure environment variables** - Create `.env` file:
+### Why a Two-Stage Entity Workflow?
+
+Classifying Entities one article at a time can produce inconsistent labels: the same Entity may be assigned to different themes because each model call sees only one article. This version separates extraction from grouping.
+
+| Stage | Input | Output | Purpose |
+|---|---|---|---|
+| Stage 1 — extraction | One article’s accessible body text | Candidate Entity list | Finds relevant, text-grounded Entities from each article. |
+| Python validation | Candidate Entity list + the same source text | Validated Entity rows and occurrence counts | Removes unsupported AI suggestions and calculates deterministic counts. |
+| Stage 2 — global clustering | All validated unique Entities from the current query | One shared Entity → theme mapping | Produces consistent, query-specific categories across all source articles. |
+
+### What the Dashboard Measures
+
+| Dashboard item | Definition |
+|---|---|
+| `抓取篇數` / Successful articles | The number of URLs that produced accessible content **and** at least one Entity passing exact-text validation. It is not simply the number returned by the SERP API. |
+| `不重複 Entity 數` | The number of distinct Entity strings across all successful articles. This is stored in `seo_metadata.total_entities_extracted`. |
+| Entity row | One validated Entity in one source article. The same Entity appearing in multiple articles produces multiple rows in `seo_data`. |
+| Entity occurrence count | The number of times an Entity string occurs in its extracted source text, calculated with Python `content.count(entity)`. |
+| Bar chart | Number of unique Entities belonging to each theme. |
+| Table total | Sum of Entity occurrence counts within that theme. |
+| Average extracted text | Average number of extracted **characters** per successful article. The existing database column is named `avg_words_per_article` for historical reasons. |
+
+### Project Structure
+
+```text
+SEO-analyzer/
+├── api/
+│   └── index.py                 # Vercel serverless API: SERP, extraction, validation, clustering, DB writes
+├── index.html                   # Login, keyword input, Supabase reads, charts, word cloud, table
+├── requirements.txt             # Production dependencies for Vercel
+├── requirements-local.txt       # Optional local-development dependency list
+├── main.py                      # Earlier local prototype; not used by the deployed dashboard workflow
+└── README.md
+```
+
+### Supabase Schema
+
+| Table | Key columns | Purpose |
+|---|---|---|
+| `seo_data` | `id`, `title`, `url`, `entity`, `count`, `theme` | One validated Entity record for one successfully analysed article. |
+| `seo_metadata` | `id`, `query`, `total_articles`, `avg_words_per_article`, `total_entities_extracted`, `max_chars_limit` | Summary metadata for the latest analysis session. |
+
+### Required Environment Variables
+
+Set the following values in **Vercel → Project → Settings → Environment Variables**. Never commit them to GitHub.
+
 ```env
-SERPER_API_KEY=your_serper_key
 OPENAI_API_KEY=your_openai_key
-SUPABASE_URL=your_supabase_url
-SUPABASE_KEY=your_supabase_key
+SERPER_API_KEY=your_serper_key
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+# Optional: defaults to gpt-5.6-sol if omitted
+OPENAI_MODEL=gpt-5.6-sol
 ```
 
-3. **Run the scraper with any keyword**
+> `SUPABASE_SERVICE_ROLE_KEY` is used only by the Vercel serverless function to write analysis data. It must **never** be exposed in `index.html` or any browser-side JavaScript. The frontend uses a Supabase anonymous key together with Supabase Auth and Row Level Security.
+
+### Deployment
+
+1. Create a Supabase project, configure authentication, create the two tables above, and apply appropriate Row Level Security policies for authenticated dashboard reads.
+2. Push the project to GitHub.
+3. Import the GitHub repository in Vercel.
+4. Add the required environment variables in Vercel.
+5. Confirm that `requirements.txt` contains the runtime dependencies used by `api/index.py`.
+6. Push to the `main` branch. Vercel will deploy automatically.
+7. Visit the live dashboard, sign in, submit a keyword, wait for the analysis to finish, and refresh the dashboard when prompted.
+
 ```bash
-python main.py
-# Enter your search keyword when prompted
-# Examples: "4G 吃到飽", "iPhone 15", "Python Framework", etc.
-```
-
-4. **Upload to Supabase**
-```bash
-python upload_to_supabase.py
-```
-
-5. **View the dashboard**
-- Visit your deployed dashboard on Vercel (or open `index.html` locally)
-- Login with your Supabase credentials
-- View statistics, charts, and entity details
-
-### 📊 Data Pipeline
-
-```
-Google Search → Scrape Websites → Extract Entities (AI) 
-→ Classify by Rules → JSON Output → Supabase Upload → Dashboard Visualization
-```
-
-### 🗂️ Database Schema
-
-**seo_metadata** (Search session metadata)
-- query: search keyword
-- total_articles: number of pages scraped
-- total_words: total characters extracted
-- avg_words_per_article: average characters per page
-- total_entities_extracted: number of entities found
-- max_words_limit: character limit per page
-- created_at: timestamp
-
-**seo_data** (Individual entities)
-- title: source article title
-- url: source URL
-- entity: entity name
-- theme: category (Telecom Brands, Mobile Phones & Hardware, Prices, Contracts, Technology, Other)
-- count: occurrence count in content
-
-### ⚙️ Configuration
-
-Edit `main.py` to customize:
-- `MAX_WORDS_LIMIT = 6000` - Maximum characters extracted per page
-- Search results limit in `get_serp_data()` - currently set to 10 results
-- Classification rules in `classify_by_rules()` - add/modify keywords for your domain
-
-Edit `index.html` to customize:
-- Summary statistics display and labels
-- Chart colors and styling
-- Table columns and formatting
-
-### � Deployment on Vercel
-
-1. **Push to GitHub**
-```bash
-git add .
-git commit -m "Deploy to Vercel"
+git add api/index.py index.html requirements.txt README.md
+git commit -m "docs: update deployed SEO analyzer README"
 git push origin main
 ```
 
-2. **Connect to Vercel**
-- Visit [Vercel Dashboard](https://vercel.com)
-- Click "New Project"
-- Import your GitHub repository
-- Set environment variables in Vercel settings:
-  - `SUPABASE_URL`
-  - `SUPABASE_ANON_KEY`
+### Debugging an Analysis Run
 
-3. **Deploy**
-- Vercel automatically deploys on each push
-- Your dashboard is live at `your-project.vercel.app`
+Open **Vercel → Project → Logs** after submitting a keyword. The API prints a trace similar to the following:
 
-### 🔐 Security Features
+```text
+=== Start analysis: 4G吃到飽 ===
+SERP returned 8 organic results; processing up to 10.
+[3] Failed: https://example.com | HTTPError: 403 Client Error: Forbidden
+First stage complete: 7 successful articles, 270 entity rows, 248 unique entities.
+Global clustering themes: [...]
+Batch inserted 270 entity rows into seo_data.
+=== Analysis finished successfully ===
+```
 
-- Supabase Row-Level Security (RLS) for data access control
-- Environment variables for sensitive credentials (never commit .env)
-- User authentication required for dashboard access
-- Secure API keys stored in Vercel environment
+This makes it possible to distinguish the following situations without guessing:
 
-### 🐛 Error Handling
+| Log pattern | Interpretation |
+|---|---|
+| `SERP returned N organic results` | The search API returned `N` organic items. `num=10` requests a maximum, not a guaranteed count. |
+| `Failed ... HTTPError: 403` | The source site blocked the HTTP request; the article is not analysed and no SERP snippet is substituted. |
+| `Skipped: no extractable article content` | The page returned no usable body text. |
+| `Skipped: no candidate entity passed exact-text validation` | The model proposed no Entity that could be verified in the extracted content. |
+| `Success: N entities passed exact-text validation` | The article contributed data and is included in `抓取篇數`. |
+| `POST /api ... 200` | The complete serverless request ended successfully. |
 
-- Validates entity names before classification
-- Filters out empty/null entities
-- Handles network timeouts gracefully
-- Comprehensive console logging for debugging
+### Current Limitations and Next Improvements
 
-### � Use Cases
+This is an interview prototype and intentionally makes data-quality trade-offs explicit.
 
-- **Market Research**: Analyze competitor mentions and market trends
-- **SEO Analysis**: Track entity mentions across search results
-- **Product Research**: Extract product features and pricing from web content
-- **Industry Monitoring**: Track mentions of companies, technologies, or trends
-- **Content Analysis**: Extract and categorize key topics from any domain
-- **Competitive Intelligence**: Monitor competitor information across the web
+| Limitation | Current behaviour | Possible next step |
+|---|---|---|
+| Fewer than ten results | Serper may return fewer than ten organic results, and inaccessible pages are excluded. | Display both “SERP results returned” and “successfully analysed articles” in the dashboard. |
+| Site blocking and client-side rendering | A page may return 403 or expose very little text to a simple HTTP request. | Add a browser-rendering fallback or an approved content-extraction service, subject to robots.txt and site policies. |
+| Content length | Each page is limited to the first 2,000 extracted characters to control time and API cost. | Add configurable limits, chunking, or asynchronous jobs for deeper analysis. |
+| Entity normalisation | Strings such as `遠傳` and `遠傳電信` remain separate Entities. | Add an optional canonicalisation/synonym layer after validation. |
+| String matching | `content.count(entity)` is deterministic but may count a short string inside a larger expression. | Add boundary-aware matching rules for selected languages and entity types. |
+| Word-cloud geometry | Word placement is affected by layout and string length, not only frequency. | Provide a ranked top-Entity list beside the word cloud. |
+| Serverless runtime | Multi-article AI analysis can be slow and may be constrained by the selected hosting-plan execution limit. | Move long jobs to an asynchronous queue/background worker and poll for status. |
 
-### 📈 Future Enhancements
+### Security Notes
 
-- Export data to CSV/Excel
-- Advanced filtering and search capabilities
-- Historical data comparison and trends
-- Custom theme templates and rules editor
-- Real-time data updates via webhooks
-- Multi-language entity extraction
-- Sentiment analysis integration
-- API endpoint for programmatic access
-- Batch processing for multiple queries
+The repository must not contain API keys, Supabase service-role credentials, or database passwords. The service-role key belongs only in Vercel environment variables. The demo account is intended solely for viewing the project dashboard.
 
-### 📝 License
+### License
 
-This project is for educational and research purposes.
+This project was developed as an educational technical assessment and portfolio prototype.
 
 ---
 
-## 中文版本
+## 繁體中文
 
-* **🌐 線上儀表板:** https://seo-analyzer-neon-beta.vercel.app/
-* **Demo 帳號:** `demo@example.com`
-* **Demo 密碼:** `demo0808`
+### 專案概述
 
-### 📋 專案概述
+**SEO Entity Extraction & Analysis Dashboard** 是一個可部署在雲端的 SEO SERP 分析原型。登入後，使用者可在儀表板直接輸入任意關鍵字；Vercel 後端會透過 Serper 取得台灣 Google 搜尋結果中的自然搜尋項目，抓取可存取網頁的正文、以 AI 提取 Entity、用程式驗證 Entity 是否真的存在於原文，再針對整個 query 的 Entity 集合進行全局動態分群，最後將結果寫入 Supabase 並呈現在受登入保護的儀表板中。
 
-一個靈活、生產就緒的 SEO 資料分析工具，可搜尋任何關鍵字，抓取搜尋結果，使用 AI 智能提取實體，按可自訂主題分類，並在互動式儀表板中可視化呈現。採用 Python 後端、Supabase 雲端資料庫，並部署在 Vercel。
+本專案刻意區分 **SERP API 回傳篇數**、**成功分析文章數**、**文章層級 Entity 資料列數** 與 **不重複 Entity 數**。因此，網站 403、抓不到正文或無法通過原文驗證的資料，不會被誤列為已完成分析。
 
-### ✨ 功能特色
+### 核心功能
 
-- **靈活的網頁爬蟲**：使用 Serper API 搜尋任何關鍵字並抓取搜尋結果內容
-- **AI 實體提取**：使用 OpenAI GPT-4o-mini 智能從內容中提取相關實體
-- **自訂分類系統**：基於規則的可自訂分類系統，按主題分類實體
-- **雲端資料庫**：使用 Supabase PostgreSQL 進行可擴展的資料存儲和管理
-- **互動式儀表板**：部署在 Vercel 上的網頁可視化，包含：
-  - 即時摘要統計數據
-  - 主題分佈可視化
-  - 詳細實體清單（含出現次數）
-  - 用戶身份驗證和 RLS 安全性
-  - 響應式設計（支持所有裝置）
+| 功能 | 說明 |
+|---|---|
+| 即時輸入關鍵字 | 已登入使用者可直接在 Vercel 儀表板輸入 keyword 並觸發分析。 |
+| SERP 抓取 | 透過 Serper.dev，使用 `gl=tw`、`hl=zh-tw` 與 `num=10` 請求最多 10 筆自然搜尋結果。 |
+| 僅使用全文內容 | 後端自行抓取來源頁面正文；若網站 403 或正文無法取得，**不使用 SERP snippet 代替文章內容**。 |
+| Entity 原文驗證 | AI 提出每個 Entity 後，程式以 `content.count(entity)` 驗證 Entity 的確存在於該篇擷取文字內，才寫入資料庫。 |
+| 兩階段 AI 流程 | 第一階段逐篇提取 Entity、暫不分類；第二階段彙整整個 query 的已驗證 Entity 後，再全局分群。 |
+| 動態分群 | 每次 query 最多產生 5 個語意相關的主題；不適合主要主題或超出上限者會歸入「其他」，總類別數最多 6 個。 |
+| Supabase 資料層 | 完成分群後，以 batch insert 將文章層級 Entity 資料寫入 `seo_data`，並將摘要寫入 `seo_metadata`。 |
+| 登入保護 | 以 Supabase Auth 限制儀表板存取；前端透過 Supabase 匿名 key 與 RLS 讀取資料，敏感的後端金鑰只存在 Vercel。 |
+| 儀表板視覺化 | Chart.js 顯示各主題的**不重複 Entity 數**；文字雲顯示 Entity 加總詞頻；表格顯示 Entity 及其文章內出現次數。 |
+| 可追蹤除錯紀錄 | Vercel Logs 會記錄 SERP 回傳篇數、每篇正文長度、AI 候選數、驗證後數量、失敗原因、最終統計、分群與批次寫入狀態。 |
 
-### 🔧 技術堆棧
+### 系統架構與資料流程
 
-**後端：**
-- Python 3.x
-- requests、BeautifulSoup4（網頁爬蟲）
-- OpenAI API（實體提取）
-- Supabase Python SDK（資料庫操作）
-- python-dotenv（環境變數管理）
-
-**前端和部署：**
-- HTML5 + 原生 JavaScript
-- Supabase JS SDK v2（實時資料庫）
-- Chart.js（互動式可視化）
-- **部署在 Vercel**（無伺服器主機, 以Github連接）
-
-**資料庫：**
-- Supabase PostgreSQL（管理型雲端資料庫）
-- 列級安全性（RLS）進行存取控制
-- 兩個主要表：`seo_metadata` 和 `seo_data`
-
-### 📁 專案結構
-
-```
-4G_AllYouCanEat/
-├── main.py                      # 網頁爬蟲 & 實體提取
-├── upload_to_supabase.py        # 上傳資料到 Supabase
-├── index.html                   # 互動式儀表板
-├── results.json                 # 輸出資料檔
-├── .env                         # 環境變數（不追蹤）
-└── README.md                    # 本檔案
+```text
+已登入使用者輸入關鍵字
+        ↓
+index.html 將 { "keyword": "..." } POST 至 /api
+        ↓
+Vercel Serverless Function：api/index.py
+        ↓
+Serper.dev：請求最多 10 筆台灣 Google 自然搜尋結果
+        ↓
+逐篇抓取來源網頁，擷取 article / main / body 文字
+        ↓
+第一階段：逐篇以 AI 提取 Entity（暫不分類）
+        ↓
+Python 原文驗證：content.count(entity) > 0
+        ↓
+彙整所有成功文章的已驗證 Entity
+        ↓
+第二階段：全局動態分群（最多 5 個主題 + 其他）
+        ↓
+批次寫入 Supabase 的 seo_data，摘要寫入 seo_metadata
+        ↓
+儀表板重新讀取資料並更新圖表、文字雲與表格
 ```
 
-### 🚀 快速開始
+### 為什麼要使用兩階段流程？
 
-#### 系統需求
+如果讓 AI 在每一篇文章中同時「提取並分類」，同一個 Entity 可能因文章脈絡不同而被分入不同類別。這版將「找出 Entity」和「為全部 Entity 建立共同分類」分開處理，讓同一個 query 的主題更一致。
 
-- Python 3.8+
-- Google Serper API 金鑰
-- OpenAI API 金鑰
-- Supabase 專案（URL 和 API 金鑰）
+| 階段 | 輸入 | 輸出 | 用意 |
+|---|---|---|---|
+| 第一階段：Entity 提取 | 單篇可存取文章的正文 | 候選 Entity 清單 | 從每篇文章找出與 query 相關、可辨識的實體。 |
+| Python 驗證與計數 | 候選 Entity 清單 + 同一篇原文 | 通過驗證的 Entity 與次數 | 移除模型臆測，並以程式確定 Entity 的原文出現次數。 |
+| 第二階段：全局分群 | 此次 query 的所有不重複、已驗證 Entity | 共同的 Entity → 主題對應 | 產生在全部文章中一致、且依 query 動態生成的分類。 |
 
-#### 安裝步驟
+### 儀表板數字如何定義？
 
-1. **設置專案**
-```bash
-cd 4G_AllYouCanEat
-pip install -r requirements.txt  # 或逐個安裝套件
+| 儀表板項目 | 定義 |
+|---|---|
+| `抓取篇數` | 同時滿足「成功取得正文」與「至少一個 Entity 通過原文驗證」的 URL 數量；**不是**單純的 SERP 回傳筆數。 |
+| `不重複 Entity 數` | 所有成功文章中，不重複的 Entity 字串數量；寫入 `seo_metadata.total_entities_extracted`。 |
+| Entity 資料列 | 一個 Entity 在一篇來源文章中的驗證結果。同一 Entity 出現在多篇文章時，會有多筆 `seo_data`。 |
+| Entity 出現次數 | Entity 字串於該篇已擷取原文內的次數，以 Python `content.count(entity)` 計算。 |
+| 長條圖 | 每個主題包含多少個不重複 Entity。 |
+| 表格右欄 | 該主題下所有 Entity 出現次數的加總。 |
+| 每篇平均字數 | 實際是平均擷取的**字元數**。資料庫欄位仍沿用早期名稱 `avg_words_per_article`。 |
+
+### 專案結構
+
+```text
+SEO-analyzer/
+├── api/
+│   └── index.py                 # Vercel API：SERP、抓取、Entity 驗證、分群、資料寫入
+├── index.html                   # 登入、關鍵字輸入、Supabase 查詢、圖表、文字雲與表格
+├── requirements.txt             # Vercel production dependencies
+├── requirements-local.txt       # 選用的本機開發依賴
+├── main.py                      # 早期本機原型；不參與目前 Vercel 即時分析流程
+└── README.md
 ```
 
-2. **配置環境變數** - 創建 `.env` 檔案：
+### Supabase 資料表
+
+| 資料表 | 主要欄位 | 用途 |
+|---|---|---|
+| `seo_data` | `id`, `title`, `url`, `entity`, `count`, `theme` | 每篇成功分析文章的 Entity 資料。 |
+| `seo_metadata` | `id`, `query`, `total_articles`, `avg_words_per_article`, `total_entities_extracted`, `max_chars_limit` | 最新一次分析的 query 與摘要統計。 |
+
+### Vercel 環境變數
+
+請在 **Vercel → Project → Settings → Environment Variables** 設定以下變數，且絕對不要提交至 GitHub。
+
 ```env
-SERPER_API_KEY=你的_serper_金鑰
-OPENAI_API_KEY=你的_openai_金鑰
-SUPABASE_URL=你的_supabase_網址
-SUPABASE_KEY=你的_supabase_金鑰
+OPENAI_API_KEY=your_openai_key
+SERPER_API_KEY=your_serper_key
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+# 選填；未設定時預設使用 gpt-5.6-sol
+OPENAI_MODEL=gpt-5.6-sol
 ```
 
-3. **執行爬蟲（支持任何關鍵字）**
+> `SUPABASE_SERVICE_ROLE_KEY` 只供 Vercel 後端寫入資料使用，不能寫進 `index.html` 或任何瀏覽器端程式。前端使用的是 Supabase anonymous key，並搭配 Supabase Auth 與 RLS。
+
+### 部署步驟
+
+1. 建立 Supabase 專案，建立上述兩張表，設定 Supabase Auth，並為已登入使用者設定必要的 RLS 讀取權限。
+2. 將專案推送到 GitHub。
+3. 在 Vercel 匯入該 GitHub repository。
+4. 在 Vercel 加入所有必要環境變數。
+5. 確認 `requirements.txt` 包含 `api/index.py` 所使用的 production dependencies。
+6. 推送到 `main` branch 後，Vercel 會自動部署。
+7. 開啟線上儀表板、登入、輸入 keyword，完成後依畫面提示重新整理即可看到新結果。
+
 ```bash
-python main.py
-# 出現提示時輸入搜尋關鍵字
-# 範例："4G 吃到飽"、"iPhone 15"、"Python 框架" 等
-```
-
-4. **上傳至 Supabase**
-```bash
-python upload_to_supabase.py
-```
-
-5. **查看儀表板**
-- 訪問您在 Vercel 上部署的儀表板（或在本地開啟 `index.html`）
-- 使用 Supabase 認證登入
-- 查看統計資料、圖表和實體詳情
-
-### 📊 資料流程
-
-```
-Google 搜尋 → 抓取網站 → 提取實體（AI）
-→ 按規則分類 → JSON 輸出 → 上傳至 Supabase → 儀表板可視化
-```
-
-### 🗂️ 資料庫架構
-
-**seo_metadata**（搜尋工作階段中繼資料）
-- query：搜尋關鍵字
-- total_articles：抓取的頁面數
-- total_words：提取的總字數
-- avg_words_per_article：每頁平均字數
-- total_entities_extracted：找到的實體數量
-- max_words_limit：每頁字數限制
-- created_at：時間戳記
-
-**seo_data**（個別實體）
-- title：源文章標題
-- url：源 URL
-- entity：實體名稱
-- theme：分類（電信品牌、手機與硬體、價格、合約、技術、其他）
-- count：在內容中出現的次數
-
-### ⚙️ 設置選項
-
-編輯 `main.py` 以自訂：
-- `MAX_WORDS_LIMIT = 6000` - 每頁提取的最大字數
-- `get_serp_data()` 中的搜尋結果限制 - 目前設為 10 筆結果
-- `classify_by_rules()` 中的分類規則 - 為您的領域新增/修改關鍵字
-
-編輯 `index.html` 以自訂：
-- 摘要統計標籤和顯示內容
-- 圖表顏色和樣式
-- 表格欄位和格式
-
-### � Vercel 部署
-
-1. **推送至 GitHub**
-```bash
-git add .
-git commit -m "部署至 Vercel"
+git add api/index.py index.html requirements.txt README.md
+git commit -m "docs: update deployed SEO analyzer README"
 git push origin main
 ```
 
-2. **連接至 Vercel**
-- 訪問 [Vercel 儀表板](https://vercel.com)
-- 點擊「New Project」
-- 匯入您的 GitHub 儲存庫
-- 在 Vercel 設置中設定環境變數：
-  - `SUPABASE_URL`
-  - `SUPABASE_ANON_KEY`
+### 如何看 Vercel Logs 除錯？
 
-3. **部署**
-- Vercel 在每次推送時自動部署
-- 您的儀表板在 `your-project.vercel.app` 上線
+送出 query 後，到 **Vercel → Project → Logs** 查看。你會看到類似：
 
-### 🔐 安全功能
+```text
+=== Start analysis: 4G吃到飽 ===
+SERP returned 8 organic results; processing up to 10.
+[3] Failed: https://example.com | HTTPError: 403 Client Error: Forbidden
+First stage complete: 7 successful articles, 270 entity rows, 248 unique entities.
+Global clustering themes: [...]
+Batch inserted 270 entity rows into seo_data.
+=== Analysis finished successfully ===
+```
 
-- Supabase 列級安全性（RLS）進行資料存取控制
-- 敏感認證使用環境變數儲存（切勿提交 .env）
-- 儀表板存取需要用戶身份驗證
-- 安全 API 金鑰儲存在 Vercel 環境變數
+| Log 訊息 | 代表意義 |
+|---|---|
+| `SERP returned N organic results` | SERP API 本次回傳 N 筆自然搜尋項目。`num=10` 是最多 10 筆的請求，不保證每次一定回傳 10 筆。 |
+| `Failed ... HTTPError: 403` | 來源網站拒絕 HTTP 存取；系統會略過，且不會使用 snippet 假裝成全文。 |
+| `Skipped: no extractable article content` | 頁面沒有可用的正文文字。 |
+| `Skipped: no candidate entity passed exact-text validation` | AI 雖可能有候選詞，但沒有任何一個能在原文中通過驗證。 |
+| `Success: N entities passed exact-text validation` | 該文章成功產生可驗證資料，會被計入「抓取篇數」。 |
+| `POST /api ... 200` | 整個後端請求成功完成。 |
 
-### 🐛 錯誤處理
+### 已知限制與下一步優化
 
-- 分類前驗證實體名稱
-- 過濾掉空值/null 實體
-- 優雅處理網路逾時
-- 提供詳細的主控台日誌用於除錯
+| 限制 | 目前行為 | 可行的下一步 |
+|---|---|---|
+| 回傳少於 10 筆 | Serper 可能回傳少於 10 筆自然搜尋結果，且無法存取的頁面不會計入成功文章數。 | 前端同時顯示「SERP 回傳篇數」與「成功分析篇數」。 |
+| 403 與 JavaScript 動態內容 | 部分網站拒絕 HTTP 抓取，或靜態 HTML 僅提供少量文字。 | 在遵守網站政策下，評估瀏覽器渲染或經核准的內容擷取服務。 |
+| 每篇內容長度 | 為控制時間與 API 成本，每篇目前最多分析 2,000 字元。 | 提供可設定長度、文本切塊，或改成背景非同步任務。 |
+| Entity 正規化 | `遠傳` 與 `遠傳電信` 等近義或上下位詞目前仍是不同 Entity。 | 加入可選的 canonicalisation / 同義詞對照層。 |
+| `.count()` 字串計數 | 可重現、可驗證，但短字串可能出現在較長詞彙內。 | 針對不同語言與 Entity 類型加入邊界判斷。 |
+| 文字雲視覺布局 | 字詞長度與排版也會影響大小和位置，不只取決於詞頻。 | 另外顯示可排序的 Top Entity 清單。 |
+| Serverless 執行時間 | 多篇抓取與多次 AI 呼叫可能耗時，並受到託管方案限制。 | 將長任務移至 queue / background worker，再由前端輪詢進度。 |
 
-### � 使用案例
+### 安全提醒
 
-- **市場研究**：分析競爭對手提及和市場趨勢
-- **SEO 分析**：追蹤實體在搜尋結果中的提及
-- **產品研究**：從網頁內容提取產品功能和定價
-- **行業監測**：追蹤公司、技術或趨勢的提及
-- **內容分析**：提取和分類任何領域的關鍵主題
-- **競爭智報**：監測網路上的競爭對手資訊
+Repository 不應包含 OpenAI、Serper、Supabase service-role 等 API key，也不應提交資料庫密碼。Service role key 僅能存在於 Vercel 環境變數。README 中的 demo 帳號只用於查看此作品的儀表板。
 
-### 📈 未來增強功能
+### 授權
 
-- 匯出資料為 CSV/Excel
-- 進階篩選和搜尋功能
-- 歷史資料比較和趨勢分析
-- 自訂主題範本和規則編輯器
-- 透過 Webhook 進行即時資料更新
-- 多語言實體提取
-- 情感分析整合
-- 用於程式存取的 API 端點
-- 批量處理多個查詢
-
-### �📝 授權
-
-本專案用於教育和研究目的。
+本專案為教育、技術測驗與作品集展示用途。
 
 ---
 
-**Last Updated:** 2026-08-09
+**Last updated:** 2026-08-11
