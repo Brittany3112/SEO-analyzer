@@ -36,11 +36,15 @@ class handler(BaseHTTPRequestHandler):
                 self.send_json(400, {"status": "error", "message": "keyword 不可以是空白"})
                 return
 
+            print(f"=== Start analysis: {keyword} ===")
+
             # 每次新分析前，清空上一次結果。
             supabase.table("seo_data").delete().neq("id", 0).execute()
             supabase.table("seo_metadata").delete().neq("id", 0).execute()
 
             search_results = self.get_serp_data(keyword)
+            print(f"SERP returned {len(search_results)} organic results; processing up to 10.")
+
             validated_rows = []
             total_chars = 0
             processed_urls = set()
@@ -50,20 +54,26 @@ class handler(BaseHTTPRequestHandler):
             # 第一階段：逐篇文章抽取 Entity，再用原文驗證與計數。
             # 此階段不分類，避免每篇文章各自產生不一致的主題。
             # -------------------------------------------------
-            for item in search_results[:10]:
+            for rank, item in enumerate(search_results[:10], start=1):
                 url = item.get("link", "")
                 title = item.get("title", "")
 
                 if not url:
+                    print(f"[{rank}] Skipped: no URL returned by SERP.")
                     continue
+
+                print(f"[{rank}] Start: {title} | {url}")
 
                 try:
                     content = self.fetch_content(url)
                     if not content:
-                        print(f"文章沒有可分析內容：{url}")
+                        print(f"[{rank}] Skipped: no extractable article content.")
                         continue
 
+                    print(f"[{rank}] Extracted content length: {len(content)} characters.")
                     candidate_entities = self.extract_entities(content, keyword)
+                    print(f"[{rank}] AI proposed {len(candidate_entities)} candidate entities.")
+
                     seen_entities = set()
                     article_rows = []
 
@@ -95,10 +105,13 @@ class handler(BaseHTTPRequestHandler):
                         total_chars += len(content)
                         processed_urls.add(url)
                         processed_titles.add(title)
+                        print(f"[{rank}] Success: {len(article_rows)} entities passed exact-text validation.")
+                    else:
+                        print(f"[{rank}] Skipped: no candidate entity passed exact-text validation.")
 
                 except Exception as error:
                     # 單篇文章 403、timeout 或解析失敗時，不中斷整體分析。
-                    print(f"處理文章失敗：{url}，原因：{error}")
+                    print(f"[{rank}] Failed: {url} | {type(error).__name__}: {error}")
                     continue
 
             # -------------------------------------------------
@@ -110,7 +123,17 @@ class handler(BaseHTTPRequestHandler):
                 entity = row["entity"]
                 entity_totals[entity] = entity_totals.get(entity, 0) + row["count"]
 
+            entity_rows_count = len(validated_rows)
+            unique_entities = len(entity_totals)
+            print(
+                "First stage complete: "
+                f"{len(processed_urls)} successful articles, "
+                f"{entity_rows_count} entity rows, "
+                f"{unique_entities} unique entities."
+            )
+
             theme_map = self.cluster_entities_globally(keyword, entity_totals)
+            print(f"Global clustering themes: {sorted(set(theme_map.values()))}")
 
             for row in validated_rows:
                 row["theme"] = theme_map.get(row["entity"], "其他")
@@ -118,34 +141,37 @@ class handler(BaseHTTPRequestHandler):
             # 所有文章統一完成分群後，一次批次寫入，避免逐 Entity insert。
             if validated_rows:
                 supabase.table("seo_data").insert(validated_rows).execute()
+                print(f"Batch inserted {entity_rows_count} entity rows into seo_data.")
+            else:
+                print("No validated rows to insert into seo_data.")
 
             articles_count = len(processed_urls)
             unique_title_count = len(processed_titles)
-            total_entities = len(validated_rows)
-            unique_entities = len(entity_totals)
 
+            # total_entities_extracted 儲存不重複 Entity 數，供前端「不重複 Entity」統計卡使用。
             supabase.table("seo_metadata").insert({
                 "query": keyword,
                 "total_articles": articles_count,
                 "avg_words_per_article": (
                     total_chars // articles_count if articles_count > 0 else 0
                 ),
-                "total_entities_extracted": total_entities,
+                "total_entities_extracted": unique_entities,
                 "max_chars_limit": MAX_CHARS_LIMIT,
             }).execute()
 
+            print("=== Analysis finished successfully ===")
             self.send_json(200, {
                 "status": "success",
                 "keyword": keyword,
                 "articles": articles_count,
                 "unique_titles": unique_title_count,
-                "entities": total_entities,
+                "entity_rows": entity_rows_count,
                 "unique_entities": unique_entities,
                 "themes": sorted(set(theme_map.values())),
             })
 
         except Exception as error:
-            print(f"API 執行失敗：{error}")
+            print(f"API execution failed: {type(error).__name__}: {error}")
             self.send_json(500, {"status": "error", "message": str(error)})
 
     def do_OPTIONS(self):
