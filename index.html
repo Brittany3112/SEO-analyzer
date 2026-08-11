@@ -88,7 +88,7 @@
                 <tr>
                     <th style="width: 15%;">主題分類</th>
                     <th style="width: 65%;">包含的小 Entity 列表與出現次數</th>
-                    <th style="width: 20%; text-align: center;">該類別entity個數</th>
+                    <th style="width: 20%; text-align: center;">該類別 Entity 總出現次數</th>
                 </tr>
             </thead>
             <tbody id="table-body">
@@ -227,9 +227,13 @@
                     return a.localeCompare(b, 'zh');
                 });
 
-                // 畫長條圖
+                // 畫長條圖：顯示每個主題包含多少個不重複 Entity
                 const labels = sortedThemes;
-                const values = sortedThemes.map(theme => themeCounts[theme] || 0);
+                const values = sortedThemes.map(theme => {
+                    return themeEntitiesMap[theme]
+                        ? Object.keys(themeEntitiesMap[theme]).length
+                        : 0;
+                });
 
                 const ctx = document.getElementById('myChart').getContext('2d');
                 new Chart(ctx, {
@@ -237,7 +241,7 @@
                     data: {
                         labels: labels,
                         datasets: [{
-                            label: 'Entity 主題總次數',
+                            label: '各主題 Entity 個數',
                             data: values,
                             backgroundColor: 'rgba(54, 162, 235, 0.6)',
                             borderColor: 'rgba(54, 162, 235, 1)',
@@ -276,7 +280,8 @@
                     if (!theme || !themeEntitiesMap[theme]) return;
                     
                     const entitiesObj = themeEntitiesMap[theme];
-                    let totalThemeCount = Object.keys(entitiesObj).length;
+                    const totalThemeOccurrences = themeCounts[theme] || 0;
+
 
                     let entitiesHtml = '';
                     for (const [entName, entCount] of Object.entries(entitiesObj)) {
@@ -289,7 +294,7 @@
                     tr.innerHTML = `
                         <td><b style="font-size: 15px; color: #007bff;">${theme}</b></td>
                         <td>${entitiesHtml}</td>
-                        <td style="text-align: center; font-weight: bold; font-size: 16px;">${totalThemeCount}</td>
+                        <td style="text-align: center; font-weight: bold; font-size: 16px;">${totalThemeOccurrences}</td>
                     `;
                     tableBody.appendChild(tr);
                 });
