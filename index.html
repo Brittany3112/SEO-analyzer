@@ -254,19 +254,18 @@
 
                 // --- 2. 渲染文字雲 (Word Cloud) ---
                 let wordCloudData = Object.entries(wordCloudMap).map(([word, count]) => {
-                    return [word, count * 8];
+                    return [word, count * 3];
                 });
 
                 WordCloud(document.getElementById('wordcloud-canvas'), {
                     list: wordCloudData,
-                    gridSize: 6,
-                    weightFactor: 6,
+                    gridSize: 8,
+                    weightFactor: 2.5,
                     fontFamily: 'sans-serif',
                     color: 'random-dark',
                     backgroundColor: '#fafbfc',
                     rotateRatio: 0.3,
-                    rotationSteps: 2,
-                    minSize: 14,
+                    rotationSteps: 2
                 });
 
                 // --- 3. 填入下方表格 ---
