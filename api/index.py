@@ -91,22 +91,22 @@ class handler(BaseHTTPRequestHandler):
         return text[:MAX_CHARS_LIMIT]
 
     def analyze_with_ai(self, content, keyword):
-    prompt = f"""分析關於『{keyword}』的文章，盡可能多地提取重要實體（至少15個以上）。
-    
-分類規則：
-- 品牌：公司名、產品名、品牌名
-- 價格：任何金額、價格、折扣資訊
-- 技術：製程、成分、規格、認證標章
-- 合約：方案、期限、條件、優惠活動
+        prompt = f"""分析關於『{keyword}』的文章，盡可能多地提取重要實體（至少15個以上）。
 
-回傳JSON格式: {{"entities": [{{"entity": "...", "count": 1, "theme": "..."}}]}}"""
-    
-    response = openai.chat.completions.create(
+        分類規則：
+        - 品牌：公司名、產品名、品牌名
+        - 價格：任何金額、價格、折扣資訊
+        - 技術：製程、成分、規格、認證標章
+        - 合約：方案、期限、條件、優惠活動
+
+        回傳JSON格式: {{"entities": [{{"entity": "...", "count": 1, "theme": "..."}}]}}"""
+
+        response = openai.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt + "\n\n" + content}],
         response_format={"type": "json_object"}
-    )
-    return json.loads(response.choices[0].message.content).get('entities', [])
+        )
+        return json.loads(response.choices[0].message.content).get('entities', [])
 
 
 
