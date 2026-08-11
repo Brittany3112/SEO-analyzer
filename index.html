@@ -28,7 +28,7 @@
 <body>
 
     <!-- 動態大標題 -->
-    <h1 id="main-heading">SERP 智慧洞察與實體分析儀表板</h1>
+    <h1 id="main-heading">SERP 智慧洞察與Entity分析儀表板</h1>
 
     <!-- 登入區塊 -->
     <div id="login-section" class="card">
@@ -118,7 +118,8 @@
                         method: 'POST',
                         body: JSON.stringify({ keyword: keyword }),
                         headers: { 'Content-Type': 'application/json' }
-                    });
+                    });//把關鍵字丟去瀏覽器發送請求到 seo-analyzer-neon-beta.vercel.app/api
+                    //Vercel 收到請求, 在它的雲端伺服器上「啟動」index.py,index.py 裡的 do_POST() 被執行
 
                     if (response.ok) {
                         msg.innerText = '分析完成！正在刷新圖表...';
@@ -253,18 +254,19 @@
 
                 // --- 2. 渲染文字雲 (Word Cloud) ---
                 let wordCloudData = Object.entries(wordCloudMap).map(([word, count]) => {
-                    return [word, count * 3];
+                    return [word, count * 8];
                 });
 
                 WordCloud(document.getElementById('wordcloud-canvas'), {
                     list: wordCloudData,
-                    gridSize: 8,
-                    weightFactor: 2.5,
+                    gridSize: 6,
+                    weightFactor: 6,
                     fontFamily: 'sans-serif',
                     color: 'random-dark',
                     backgroundColor: '#fafbfc',
                     rotateRatio: 0.3,
-                    rotationSteps: 2
+                    rotationSteps: 2,
+                    minSize: 14,
                 });
 
                 // --- 3. 填入下方表格 ---
