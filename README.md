@@ -7,7 +7,6 @@
 | Link | Details |
 |---|---|
 | Live dashboard | https://seo-analyzer-neon-beta.vercel.app/ |
-| Repository | https://github.com/Brittany3112/SEO-analyzer |
 | Demo email | `demo@example.com` |
 | Demo password | `demo0808` |
 
